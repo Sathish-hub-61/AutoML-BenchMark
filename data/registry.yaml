@@ -1,0 +1,100 @@
+datasets:
+  - name: breast_cancer
+    source: sklearn
+    identifier: breast_cancer
+    target_column: target
+    domain: healthcare
+    task: binary
+    notes: Wisconsin diagnostic; offline sklearn loader.
+  - name: wine
+    source: sklearn
+    identifier: wine
+    target_column: target
+    domain: general
+    task: multiclass
+    notes: sklearn wine; small multiclass smoke dataset.
+  - name: pima_diabetes
+    source: openml
+    identifier: 37
+    target_column: class
+    domain: healthcare
+    task: binary
+    notes: Pima Indians Diabetes (OpenML 37).
+  - name: heart_disease
+    source: openml
+    identifier: 53
+    target_column: Class
+    domain: healthcare
+    task: binary
+    notes: heart-statlog (OpenML 53).
+  - name: german_credit
+    source: openml
+    identifier: 31
+    target_column: class
+    domain: finance
+    task: binary
+    notes: OpenML 31.
+  - name: bank_marketing
+    source: openml
+    identifier: 1461
+    target_column: Class
+    domain: finance
+    task: binary
+    notes: bank-marketing; imbalanced.
+  - name: adult
+    source: openml
+    identifier: 1590
+    target_column: class
+    domain: finance
+    task: binary
+    notes: Census income; week-4 milestone dataset.
+  - name: wine_quality
+    source: openml
+    identifier: 287
+    target_column: quality
+    domain: general
+    task: multiclass
+    notes: wine-quality-white (OpenML 287).
+  - name: dry_bean
+    source: openml
+    identifier: 43097
+    target_column: Class
+    domain: general
+    task: multiclass
+    notes: Dry Bean.
+  - name: letter
+    source: openml
+    identifier: 6
+    target_column: class
+    domain: general
+    task: multiclass
+    notes: Letter Recognition.
+  - name: covertype_sample
+    source: openml
+    identifier: 180
+    target_column: class
+    domain: general
+    task: multiclass
+    notes: Covertype; engine will subsample when large.
+    sample_rows: 8000
+  - name: telco_churn
+    source: kaggle
+    identifier: blastchar/telco-customer-churn
+    target_column: Churn
+    domain: customer
+    task: binary
+    notes: Optional; requires Kaggle credentials.
+  - name: stroke
+    source: kaggle
+    identifier: fedesoriano/stroke-prediction-dataset
+    target_column: stroke
+    domain: healthcare
+    task: binary
+    notes: Optional; strong imbalance.
+  - name: credit_card_fraud
+    source: kaggle
+    identifier: mlg-ulb/creditcardfraud
+    target_column: Class
+    domain: fraud
+    task: binary
+    notes: Optional; large and extremely imbalanced.

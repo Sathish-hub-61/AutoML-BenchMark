@@ -1,0 +1,35 @@
+logistic_regression:
+  C: {type: loguniform, low: 0.001, high: 100.0}
+  max_iter: {type: categorical, choices: [200, 500]}
+svm:
+  C: {type: loguniform, low: 0.01, high: 100.0}
+  gamma: {type: loguniform, low: 0.0001, high: 1.0}
+  kernel: {type: categorical, choices: [rbf, linear]}
+decision_tree:
+  max_depth: {type: int, low: 2, high: 20}
+  min_samples_split: {type: int, low: 2, high: 20}
+  min_samples_leaf: {type: int, low: 1, high: 10}
+  criterion: {type: categorical, choices: [gini, entropy]}
+random_forest:
+  n_estimators: {type: int, low: 80, high: 300}
+  max_depth: {type: int, low: 3, high: 20}
+  min_samples_leaf: {type: int, low: 1, high: 8}
+  max_features: {type: categorical, choices: [sqrt, log2]}
+xgboost:
+  n_estimators: {type: int, low: 80, high: 400}
+  learning_rate: {type: loguniform, low: 0.01, high: 0.3}
+  max_depth: {type: int, low: 2, high: 8}
+  subsample: {type: float, low: 0.6, high: 1.0}
+  colsample_bytree: {type: float, low: 0.6, high: 1.0}
+  reg_lambda: {type: loguniform, low: 0.1, high: 10.0}
+gradient_boosting:
+  n_estimators: {type: int, low: 50, high: 200}
+  learning_rate: {type: loguniform, low: 0.01, high: 0.3}
+  max_depth: {type: int, low: 2, high: 6}
+  subsample: {type: float, low: 0.6, high: 1.0}
+naive_bayes:
+  var_smoothing: {type: loguniform, low: 1.0e-12, high: 1.0e-6}
+knn:
+  n_neighbors: {type: int, low: 3, high: 31}
+  weights: {type: categorical, choices: [uniform, distance]}
+  p: {type: categorical, choices: [1, 2]}
