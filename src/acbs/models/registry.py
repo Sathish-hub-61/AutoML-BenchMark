@@ -31,7 +31,8 @@ class ModelSpec:
 
 def _lr(params: dict, seed: int, n_jobs: int) -> LogisticRegression:
     merged = {"max_iter": 400, "solver": "lbfgs", **params}
-    return LogisticRegression(random_state=seed, n_jobs=n_jobs if "n_jobs" in LogisticRegression().get_params() else None, **{k: v for k, v in merged.items() if k != "n_jobs"})
+    merged.pop("n_jobs", None)
+    return LogisticRegression(random_state=seed, **merged)
 
 
 def _svm(params: dict, seed: int, n_jobs: int, n_rows: int | None = None) -> Any:
@@ -39,8 +40,11 @@ def _svm(params: dict, seed: int, n_jobs: int, n_rows: int | None = None) -> Any
     if n_rows is not None and n_rows > max_rows:
         base = LinearSVC(random_state=seed, dual="auto", **{k: v for k, v in params.items() if k in {"C"}})
         return CalibratedClassifierCV(base, cv=3)
-    merged = {"probability": True, "kernel": "rbf", **params}
-    return SVC(random_state=seed, **merged)
+    merged = {"kernel": "rbf", **params}
+    merged.pop("probability", None)
+    base = SVC(random_state=seed, **merged)
+    return CalibratedClassifierCV(base, ensemble=False)
+
 
 
 def _dt(params: dict, seed: int, n_jobs: int) -> DecisionTreeClassifier:
@@ -127,6 +131,10 @@ def apply_class_weight(estimator, strategy: str, y) -> None:
     params = estimator.get_params(deep=False)
     if "class_weight" in params:
         estimator.set_params(class_weight="balanced")
+    elif hasattr(estimator, "estimator") and estimator.estimator is not None:
+        sub_params = estimator.estimator.get_params(deep=False)
+        if "class_weight" in sub_params:
+            estimator.estimator.set_params(class_weight="balanced")
     if estimator.__class__.__name__ == "XGBClassifier":
         import numpy as np
 
@@ -135,3 +143,4 @@ def apply_class_weight(estimator, strategy: str, y) -> None:
             majority = counts.max()
             minority = max(counts.min(), 1)
             estimator.set_params(scale_pos_weight=float(majority / minority))
+
