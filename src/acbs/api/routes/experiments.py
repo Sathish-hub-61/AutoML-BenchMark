@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import threading
-from datetime import datetime
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse, Response
@@ -19,6 +18,7 @@ from acbs.storage.models import DatasetRow
 from acbs.storage.repository import Repository
 from acbs.utils.logging import get_logger
 from acbs.utils.paths import repo_root
+from acbs.utils.time import utc_now
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/experiments", tags=["experiments"])
@@ -56,7 +56,7 @@ def _execute(experiment_id: int) -> None:
         exp = repo.get_experiment(experiment_id)
         if exp is None:
             return
-        repo.update_status(experiment_id, "running", started_at=datetime.utcnow())
+        repo.update_status(experiment_id, "running", started_at=utc_now())
         dataset = _loaded_from_row(exp.dataset)
         cfg = dict(exp.config_json or {})
 
@@ -80,12 +80,13 @@ def _execute(experiment_id: int) -> None:
         repo.update_status(
             experiment_id,
             "completed",
-            finished_at=datetime.utcnow(),
+            finished_at=utc_now(),
             progress_json={"pct": 100, "current_model": rec["model_name"], "message": "done"},
         )
     except Exception as exc:
         logger.exception("experiment %s failed", experiment_id)
-        repo.update_status(experiment_id, "failed", error=str(exc), finished_at=datetime.utcnow())
+        repo.update_status(experiment_id, "failed", error=str(exc), finished_at=utc_now())
+
     finally:
         session.close()
 

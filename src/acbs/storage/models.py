@@ -8,6 +8,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship,
 from sqlalchemy.types import JSON
 
 from acbs.utils.paths import settings
+from acbs.utils.time import utc_now
 
 
 class Base(DeclarativeBase):
@@ -15,6 +16,7 @@ class Base(DeclarativeBase):
 
 
 JSONType = JSON().with_variant(SQLITE_JSON(), "sqlite")
+
 
 
 class DatasetRow(Base):
@@ -26,8 +28,9 @@ class DatasetRow(Base):
     n_features: Mapped[int | None] = mapped_column(Integer, nullable=True)
     profile_json: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
     file_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     experiments: Mapped[list[ExperimentRow]] = relationship(back_populates="dataset")
+
 
 
 class ExperimentRow(Base):
