@@ -95,4 +95,17 @@ def make_session_factory(engine=None):
 
 def init_db(engine=None) -> None:
     engine = engine or make_engine()
-    Base.metadata.create_all(engine)
+    from alembic import command
+    from alembic.config import Config
+
+    from acbs.utils.paths import repo_root
+
+    ini_path = repo_root() / "alembic.ini"
+    alembic_cfg = Config(str(ini_path))
+    alembic_cfg.set_main_option("script_location", str(repo_root() / "alembic"))
+    alembic_cfg.set_main_option("sqlalchemy.url", str(engine.url))
+
+    with engine.connect() as connection:
+        alembic_cfg.attributes["connection"] = connection
+        command.upgrade(alembic_cfg, "head")
+
