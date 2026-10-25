@@ -10,7 +10,7 @@ from acbs.benchmark.aggregate import results_to_dataframe
 from acbs.benchmark.engine import run_benchmark
 from acbs.data.loader import load_dataset
 from acbs.recommend.explain import generate_explanation
-from acbs.recommend.scoring import UserPreferences, score_models
+from acbs.recommend.scoring import UserPreferences, score_models, sensitivity_analysis
 
 app = typer.Typer(no_args_is_help=True)
 console = Console()
@@ -61,7 +61,7 @@ def run(
     eligible = scored[~scored["excluded"]]
     if not eligible.empty:
         rec = eligible.sort_values("rank").iloc[0]
-        exp = generate_explanation(rec, df, result.profile, prefs, {})
+        exp = generate_explanation(rec, df, result.profile, prefs, sensitivity_analysis(df, prefs))
         console.print(f"\n[bold green]{exp['headline']}[/bold green]")
         for p in exp["paragraphs"]:
             console.print(p)

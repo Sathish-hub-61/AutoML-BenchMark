@@ -15,6 +15,23 @@ from sklearn.metrics import (
 )
 
 
+def _safe_roc_auc_scorer(y_true, y_proba) -> float:
+    """ROC-AUC scorer safe for both binary (2-class proba) and multiclass."""
+    try:
+        proba = np.asarray(y_proba)
+        if proba.ndim == 1:
+            return float(roc_auc_score(y_true, proba))
+        if proba.shape[1] == 2:
+            return float(roc_auc_score(y_true, proba[:, 1]))
+        return float(
+            roc_auc_score(
+                y_true, proba, multi_class="ovr", average="macro", labels=np.unique(y_true)
+            )
+        )
+    except Exception:
+        return float("nan")
+
+
 def _safe_auc(y_true, y_proba, classes) -> float:
     try:
         n_classes = len(classes)
@@ -52,7 +69,7 @@ def get_scorers() -> dict[str, Any]:
         "precision_macro": make_scorer(precision_score, average="macro", zero_division=0),
         "recall_macro": make_scorer(recall_score, average="macro", zero_division=0),
         "balanced_accuracy": "balanced_accuracy",
-        "roc_auc_ovr": "roc_auc_ovr",
+        "roc_auc_ovr": make_scorer(_safe_roc_auc_scorer, response_method="predict_proba"),
     }
 
 
