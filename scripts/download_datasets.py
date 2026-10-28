@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import sys
 from acbs.data.loader import load_dataset, load_registry
 from acbs.utils.logging import get_logger
 

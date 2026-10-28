@@ -49,9 +49,12 @@ def _clean_frame(df: pd.DataFrame) -> pd.DataFrame:
         dups = df.columns[df.columns.duplicated()].tolist()
         raise DuplicateColumnError(f"Duplicate columns: {dups}")
     for col in df.columns:
-        if df[col].dtype == object:
-            coerced = pd.to_numeric(df[col], errors="ignore")
-            df[col] = coerced
+        if df[col].dtype == object or isinstance(df[col].dtype, pd.StringDtype):
+            try:
+                df[col] = pd.to_numeric(df[col])
+            except (ValueError, TypeError):
+                # Not numeric text; leave the column untouched.
+                pass
     return df
 
 
@@ -82,12 +85,20 @@ def _encode_target(y: pd.Series) -> tuple[pd.Series, dict[str, Any]]:
 def _from_frame(df: pd.DataFrame, target: str, meta: dict[str, Any]) -> LoadedDataset:
     df = _clean_frame(df)
     if target not in df.columns:
-        raise TargetNotFoundError(f"Target column '{target}' not found. Columns: {list(df.columns)}")
+        raise TargetNotFoundError(
+            f"Target column '{target}' not found. Columns: {list(df.columns)}"
+        )
     y_raw = df[target]
     X = df.drop(columns=[target])
     _validate(X, y_raw, target)
     y, enc = _encode_target(y_raw)
-    meta = {**meta, **enc, "target_column": target, "n_rows": int(len(X)), "n_features": int(X.shape[1])}
+    meta = {
+        **meta,
+        **enc,
+        "target_column": target,
+        "n_rows": int(len(X)),
+        "n_features": int(X.shape[1]),
+    }
     return LoadedDataset(X=X.reset_index(drop=True), y=y.reset_index(drop=True), meta=meta)
 
 

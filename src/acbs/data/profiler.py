@@ -33,9 +33,24 @@ class DatasetProfile(BaseModel):
     categorical_columns: list[str] = Field(default_factory=list)
 
 
+def _is_string_like(series: pd.Series) -> bool:
+    """True for text columns under any pandas string representation.
+
+    pandas 3 defaults to the dedicated ``str`` dtype, while legacy frames and
+    mixed-type columns keep ``object``; both must be treated as text.
+    """
+    if isinstance(series.dtype, pd.StringDtype):
+        return True
+    if series.dtype == object:
+        return bool(pd.api.types.is_string_dtype(series))
+    return False
+
+
 def _is_categorical(series: pd.Series) -> bool:
-    return series.dtype == object or str(series.dtype) in {"category", "bool", "boolean"} or (
-        pd.api.types.is_integer_dtype(series) and series.nunique(dropna=True) <= 12
+    return (
+        _is_string_like(series)
+        or str(series.dtype) in {"category", "bool", "boolean"}
+        or (pd.api.types.is_integer_dtype(series) and series.nunique(dropna=True) <= 12)
     )
 
 
@@ -63,7 +78,7 @@ def profile_dataset(
             continue
         unique_ratio = nunique / max(n_rows, 1)
         if unique_ratio > id_unique_ratio and (
-            pd.api.types.is_integer_dtype(s) or s.dtype == object
+            pd.api.types.is_integer_dtype(s) or _is_string_like(s) or s.dtype == object
         ):
             drop.append(str(col))
             warnings.append(f"Possible ID column: {col}")
@@ -92,7 +107,9 @@ def profile_dataset(
     imb = float(counts.max() / max(counts.min(), 1))
     is_imb = imb > imbalance_threshold
     if is_imb:
-        warnings.append(f"Severe class imbalance 1:{imb:.1f}" if imb > 10 else f"Class imbalance {imb:.1f}:1")
+        warnings.append(
+            f"Severe class imbalance 1:{imb:.1f}" if imb > 10 else f"Class imbalance {imb:.1f}:1"
+        )
 
     numeric = X[numeric_cols].select_dtypes(include=[np.number])
     skew_share = 0.0
@@ -103,7 +120,7 @@ def profile_dataset(
         q1, q3 = numeric.quantile(0.25), numeric.quantile(0.75)
         iqr = (q3 - q1).replace(0, np.nan)
         lower, upper = q1 - 1.5 * iqr, q3 + 1.5 * iqr
-        mask = (numeric.lt(lower) | numeric.gt(upper))
+        mask = numeric.lt(lower) | numeric.gt(upper)
         outlier_share = float(mask.stack().mean()) if mask.size else 0.0
 
     if n_rows < 5000:

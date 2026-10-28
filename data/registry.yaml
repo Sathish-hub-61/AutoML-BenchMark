@@ -77,6 +77,20 @@ datasets:
     task: multiclass
     notes: Covertype; engine will subsample when large.
     sample_rows: 8000
+  - name: horse_colic
+    source: openml
+    identifier: 27
+    target_column: surgical_lesion
+    domain: healthcare
+    task: binary
+    notes: OpenML 27; contains extensive missing values (numerical and categorical).
+  - name: titanic
+    source: openml
+    identifier: 40945
+    target_column: survived
+    domain: general
+    task: binary
+    notes: OpenML 40945; missing values in Age/Cabin/Embarked and high-cardinality categoricals.
   - name: telco_churn
     source: kaggle
     identifier: blastchar/telco-customer-churn
