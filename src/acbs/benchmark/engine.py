@@ -11,6 +11,9 @@ import pandas as pd
 from pydantic import BaseModel, Field
 from sklearn.model_selection import cross_validate
 
+from acbs.automl.contracts import TrainSpec
+from acbs.automl.evaluate import evaluate_automl_result
+from acbs.automl.runner import run_framework
 from acbs.benchmark.metrics import compute_metrics, get_scorers, predict_proba_or_decision
 from acbs.benchmark.timing import measure_prediction_time, measure_training_time
 from acbs.benchmark.tuner import tune_model
@@ -25,11 +28,18 @@ from acbs.utils.paths import load_default_config
 from acbs.utils.seeds import set_global_seed
 
 logger = get_logger(__name__)
-ProgressCb = Callable[[str, int, int, str], None] | None
+# Callback signature: (model_name, step, total, message, status=None, elapsed_s=None) -> None
+ProgressCb = Callable[..., None] | None
 
 
 class BenchmarkConfig(BaseModel):
     models: list[str] = Field(default_factory=lambda: ["all"])
+    automl_frameworks: list[str] = Field(default_factory=list)
+    automl_budget_s: int = 60
+    automl_n_jobs: int = 1
+    automl_grace_s: int = 60
+    automl_memory_gb: int = 4
+    outer_folds: int = 1
     cv_folds: int = 5
     seed: int = 42
     metrics_primary: str = "f1_macro"
@@ -58,6 +68,14 @@ class ModelRunResult(BaseModel):
     y_pred: list[int] = Field(default_factory=list)
     y_true: list[int] = Field(default_factory=list)
     y_proba: list[list[float]] | None = None
+    kind: str = "classic"
+    framework: str | None = None
+    framework_version: str | None = None
+    budget_s: int | None = None
+    budget_used_ratio: float | None = None
+    n_models_evaluated: int | None = None
+    model_summary: str | None = None
+    peak_mem_mb: float | None = None
 
 
 class BenchmarkResult(BaseModel):
@@ -80,7 +98,9 @@ def library_versions() -> dict[str, str]:
     return out
 
 
-def _cv_metrics_from_sklearn(cv_result: dict) -> tuple[dict[str, float], dict[str, float], dict[str, list[float]]]:
+def _cv_metrics_from_sklearn(
+    cv_result: dict,
+) -> tuple[dict[str, float], dict[str, float], dict[str, list[float]]]:
     means, stds, folds = {}, {}, {}
     mapping = {
         "test_accuracy": "accuracy",
@@ -165,7 +185,9 @@ def _run_one(
         )
     except TimeoutError as exc:
         logger.warning("timeout %s: %s", spec.name, exc)
-        return ModelRunResult(model_name=spec.name, status="timeout", error=str(exc), notes=str(timeout))
+        return ModelRunResult(
+            model_name=spec.name, status="timeout", error=str(exc), notes=str(timeout)
+        )
     except Exception as exc:
         logger.exception("model failed %s", spec.name)
         return ModelRunResult(
@@ -176,15 +198,52 @@ def _run_one(
         )
 
 
+def estimate_cost(cfg: BenchmarkConfig | dict[str, Any], n_datasets: int = 1) -> dict[str, float]:
+    """Estimate expected wall-clock runtime in seconds before starting a benchmark."""
+    if isinstance(cfg, dict):
+        base = load_default_config()
+        merged = {**base, **cfg}
+        parsed = BenchmarkConfig.model_validate(
+            {k: v for k, v in merged.items() if k in BenchmarkConfig.model_fields}
+        )
+    else:
+        parsed = cfg
+
+    specs = get_models(None if parsed.models == ["all"] else parsed.models) if parsed.models else []
+    classic_per_model = 15.0 if parsed.tuning != "none" else 2.0
+    classic_total = len(specs) * classic_per_model
+
+    automl_total = 0.0
+    for _ in parsed.automl_frameworks:
+        automl_total += float(parsed.automl_budget_s + parsed.automl_grace_s)
+
+    single_run = (classic_total + automl_total) * max(1, parsed.outer_folds)
+    total_seconds = single_run * n_datasets
+
+    return {
+        "classic_seconds": round(classic_total * parsed.outer_folds * n_datasets, 1),
+        "automl_seconds": round(automl_total * parsed.outer_folds * n_datasets, 1),
+        "total_seconds": round(total_seconds, 1),
+        "total_minutes": round(total_seconds / 60.0, 1),
+    }
+
+
 def run_benchmark(
     dataset: LoadedDataset,
     cfg: dict | None = None,
     progress_callback: ProgressCb = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> BenchmarkResult:
-    """Train models sequentially so timings stay comparable; folds may use n_jobs."""
+    """Train models sequentially so timings stay comparable; folds may use n_jobs.
+
+    ``should_stop`` is polled between models: when it returns True the run ends
+    early and returns the results collected so far (status ``cancelled`` is set by
+    the caller, not here).
+    """
     base = load_default_config()
-    if cfg:
-        base.update({k: v for k, v in cfg.items() if v is not None})
+    if cfg is not None:
+        cfg_dict = cfg.model_dump() if hasattr(cfg, "model_dump") else cfg
+        base.update({k: v for k, v in cfg_dict.items() if v is not None})
     parsed = BenchmarkConfig.model_validate(
         {k: v for k, v in base.items() if k in BenchmarkConfig.model_fields}
     )
@@ -201,23 +260,136 @@ def run_benchmark(
         dataset.X, dataset.y, test_size=parsed.test_size, seed=parsed.seed
     )
     cv = make_cv_splitter(cv_folds=parsed.cv_folds, seed=parsed.seed)
-    specs = get_models(None if parsed.models == ["all"] else parsed.models)
+    specs = get_models(None if parsed.models == ["all"] else parsed.models) if parsed.models else []
     classes = list(range(int(pd.Series(dataset.y).nunique())))
     results: list[ModelRunResult] = []
     deadline = time.perf_counter() + float(parsed.total_budget_seconds)
+    total_steps = len(specs) + len(parsed.automl_frameworks)
+
+    # Tier 1: Classic ML models (leak-free scikit-learn pipeline)
     for i, spec in enumerate(specs, start=1):
+        if should_stop and should_stop():
+            logger.info("benchmark stopped before %s; returning partial results", spec.name)
+            break
         if progress_callback:
-            progress_callback(spec.name, i - 1, len(specs), f"Training {spec.name}")
+            progress_callback(
+                spec.name, i - 1, total_steps, f"Training {spec.name}", status="running"
+            )
         if time.perf_counter() > deadline:
             results.append(
-                ModelRunResult(model_name=spec.name, status="timeout", error="Total time budget exhausted")
+                ModelRunResult(
+                    model_name=spec.name,
+                    kind="classic",
+                    status="timeout",
+                    error="Total time budget exhausted",
+                )
             )
+            if progress_callback:
+                progress_callback(
+                    spec.name, i, total_steps, f"Skipped {spec.name}", status="timeout"
+                )
             continue
-        results.append(
-            _run_one(spec, X_train, y_train, X_test, y_test, profile, merged, cv, classes)
-        )
+        t_model = time.perf_counter()
+        res = _run_one(spec, X_train, y_train, X_test, y_test, profile, merged, cv, classes)
+        res.kind = "classic"
+        results.append(res)
         if progress_callback:
-            progress_callback(spec.name, i, len(specs), f"Finished {spec.name}")
+            progress_callback(
+                spec.name,
+                i,
+                total_steps,
+                f"Finished {spec.name}",
+                status=res.status,
+                elapsed_s=round(time.perf_counter() - t_model, 3),
+            )
+
+    # Tier 2: AutoML contender frameworks (run in isolated environments with raw data)
+    for k, fid in enumerate(parsed.automl_frameworks, start=len(specs) + 1):
+        if should_stop and should_stop():
+            logger.info("benchmark stopped before %s; returning partial results", fid)
+            break
+        if progress_callback:
+            progress_callback(
+                fid, k - 1, total_steps, f"Running AutoML framework {fid}", status="running"
+            )
+        if time.perf_counter() > deadline:
+            results.append(
+                ModelRunResult(
+                    model_name=fid,
+                    kind="automl",
+                    framework=fid,
+                    budget_s=parsed.automl_budget_s,
+                    status="timeout",
+                    error="Total time budget exhausted",
+                )
+            )
+            if progress_callback:
+                progress_callback(fid, k, total_steps, f"Skipped {fid}", status="timeout")
+            continue
+        t_model = time.perf_counter()
+        try:
+            train_spec = TrainSpec.from_arrays(
+                framework_id=fid,
+                X_train=X_train,
+                y_train=y_train,
+                X_test=X_test,
+                task_type="binary" if len(classes) == 2 else "multiclass",
+                n_classes=len(classes),
+                time_budget_s=parsed.automl_budget_s,
+                seed=parsed.seed,
+                metric=parsed.metrics_primary,
+            )
+            run_res = run_framework(train_spec, grace_extra_s=parsed.automl_grace_s)
+            eval_res = evaluate_automl_result(run_res, y_test, classes)
+            budget_used_ratio = (
+                round(run_res.fit_time_s / max(1, parsed.automl_budget_s), 3)
+                if run_res.fit_time_s > 0
+                else 0.0
+            )
+            interp = 1 if fid in {"autogluon", "h2o", "lightautoml"} else 2
+            results.append(
+                ModelRunResult(
+                    model_name=fid,
+                    kind="automl",
+                    framework=fid,
+                    framework_version=run_res.framework_version,
+                    status=run_res.status,
+                    error=run_res.error,
+                    notes=run_res.best_pipeline or "",
+                    test_metrics=eval_res["test_metrics"],
+                    training_time=run_res.fit_time_s,
+                    prediction_time_per_1k=run_res.predict_time_s,
+                    budget_s=parsed.automl_budget_s,
+                    budget_used_ratio=budget_used_ratio,
+                    model_summary=run_res.best_pipeline,
+                    interpretability_score=interp,
+                    y_pred=eval_res["y_pred"],
+                    y_true=eval_res["y_true"],
+                    y_proba=eval_res["y_proba"],
+                )
+            )
+        except Exception as exc:
+            logger.exception("AutoML framework %s failed with unhandled exception", fid)
+            results.append(
+                ModelRunResult(
+                    model_name=fid,
+                    kind="automl",
+                    framework=fid,
+                    budget_s=parsed.automl_budget_s,
+                    status="failed",
+                    error=str(exc),
+                )
+            )
+        if progress_callback:
+            progress_callback(
+                fid,
+                k,
+                total_steps,
+                f"Finished AutoML framework {fid}",
+                status=results[-1].status,
+                elapsed_s=round(time.perf_counter() - t_model, 3),
+            )
+
     return BenchmarkResult(
         profile=profile.model_dump(),
         config=merged,

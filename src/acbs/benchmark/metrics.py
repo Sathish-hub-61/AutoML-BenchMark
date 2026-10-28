@@ -41,7 +41,9 @@ def _safe_auc(y_true, y_proba, classes) -> float:
             else:
                 scores = y_proba
             return float(roc_auc_score(y_true, scores))
-        return float(roc_auc_score(y_true, y_proba, multi_class="ovr", average="macro", labels=classes))
+        return float(
+            roc_auc_score(y_true, y_proba, multi_class="ovr", average="macro", labels=classes)
+        )
     except Exception:
         return float("nan")
 
@@ -54,7 +56,9 @@ def compute_metrics(y_true, y_pred, y_proba, classes) -> dict[str, float]:
         "precision_macro": float(precision_score(y_true, y_pred, average="macro", zero_division=0)),
         "recall_macro": float(recall_score(y_true, y_pred, average="macro", zero_division=0)),
         "f1_macro": float(f1_score(y_true, y_pred, average="macro", zero_division=0)),
-        "precision_weighted": float(precision_score(y_true, y_pred, average="weighted", zero_division=0)),
+        "precision_weighted": float(
+            precision_score(y_true, y_pred, average="weighted", zero_division=0)
+        ),
         "recall_weighted": float(recall_score(y_true, y_pred, average="weighted", zero_division=0)),
         "f1_weighted": float(f1_score(y_true, y_pred, average="weighted", zero_division=0)),
         "mcc": float(matthews_corrcoef(y_true, y_pred)),

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
@@ -38,13 +39,14 @@ def _lr(params: dict, seed: int, n_jobs: int) -> LogisticRegression:
 def _svm(params: dict, seed: int, n_jobs: int, n_rows: int | None = None) -> Any:
     max_rows = 20_000
     if n_rows is not None and n_rows > max_rows:
-        base = LinearSVC(random_state=seed, dual="auto", **{k: v for k, v in params.items() if k in {"C"}})
+        base = LinearSVC(
+            random_state=seed, dual="auto", **{k: v for k, v in params.items() if k in {"C"}}
+        )
         return CalibratedClassifierCV(base, cv=3)
     merged = {"kernel": "rbf", **params}
     merged.pop("probability", None)
     base = SVC(random_state=seed, **merged)
     return CalibratedClassifierCV(base, ensemble=False)
-
 
 
 def _dt(params: dict, seed: int, n_jobs: int) -> DecisionTreeClassifier:
@@ -81,6 +83,10 @@ def _knn(params: dict, seed: int, n_jobs: int) -> KNeighborsClassifier:
     return KNeighborsClassifier(n_jobs=n_jobs, **merged)
 
 
+def _dummy(params: dict, seed: int, n_jobs: int) -> DummyClassifier:
+    return DummyClassifier(strategy="most_frequent")
+
+
 _REGISTRY: dict[str, ModelSpec] = {}
 
 
@@ -105,14 +111,35 @@ def _bootstrap() -> None:
         )
     )
     register_model(
-        ModelSpec("svm", "svm", lambda p, s, n: _svm(p, s, n), True, True, True, 2, "Slow on large n", 20_000)
+        ModelSpec(
+            "svm",
+            "svm",
+            lambda p, s, n: _svm(p, s, n),
+            True,
+            True,
+            True,
+            2,
+            "Slow on large n",
+            20_000,
+        )
     )
     register_model(ModelSpec("decision_tree", "tree", _dt, False, True, True, 5, "Interpretable"))
-    register_model(ModelSpec("random_forest", "ensemble", _rf, False, True, True, 3, "Strong tabular default"))
-    register_model(ModelSpec("xgboost", "boosting", _xgb, False, False, True, 2, "Often best accuracy"))
-    register_model(ModelSpec("gradient_boosting", "boosting", _gb, False, False, True, 2, "sklearn boosting"))
+    register_model(
+        ModelSpec("random_forest", "ensemble", _rf, False, True, True, 3, "Strong tabular default")
+    )
+    register_model(
+        ModelSpec("xgboost", "boosting", _xgb, False, False, True, 2, "Often best accuracy")
+    )
+    register_model(
+        ModelSpec("gradient_boosting", "boosting", _gb, False, False, True, 2, "sklearn boosting")
+    )
     register_model(ModelSpec("naive_bayes", "naive_bayes", _nb, True, False, True, 4, "Very fast"))
-    register_model(ModelSpec("knn", "instance", _knn, True, False, True, 3, "Slow predict on large n", 100_000))
+    register_model(
+        ModelSpec("knn", "instance", _knn, True, False, True, 3, "Slow predict on large n", 100_000)
+    )
+    register_model(
+        ModelSpec("dummy", "baseline", _dummy, False, False, True, 5, "Majority class baseline")
+    )
 
 
 def get_models(names: list[str] | None = None) -> list[ModelSpec]:
@@ -143,4 +170,3 @@ def apply_class_weight(estimator, strategy: str, y) -> None:
             majority = counts.max()
             minority = max(counts.min(), 1)
             estimator.set_params(scale_pos_weight=float(majority / minority))
-

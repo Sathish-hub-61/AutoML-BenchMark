@@ -20,7 +20,14 @@ def grouped_metrics_bar(df: pd.DataFrame, metrics: list[str] | None = None) -> g
     metrics = metrics or ["accuracy", "f1_macro", "precision_macro", "recall_macro", "roc_auc"]
     ok = df[df.get("status", "ok") == "ok"]
     long = ok.melt(id_vars=["model_name"], value_vars=[m for m in metrics if m in ok.columns])
-    return px.bar(long, x="model_name", y="value", color="variable", barmode="group", color_discrete_sequence=PALETTE)
+    return px.bar(
+        long,
+        x="model_name",
+        y="value",
+        color="variable",
+        barmode="group",
+        color_discrete_sequence=PALETTE,
+    )
 
 
 def metric_radar(df: pd.DataFrame, models: list[str], metrics: list[str]) -> go.Figure:
@@ -33,15 +40,32 @@ def metric_radar(df: pd.DataFrame, models: list[str], metrics: list[str]) -> go.
             lo, hi = col.min(), col.max()
             v = row.get(m, 0) or 0
             vals.append(0.5 if hi == lo else (v - lo) / (hi - lo))
-        fig.add_trace(go.Scatterpolar(r=vals + vals[:1], theta=metrics + metrics[:1], fill="toself", name=row["model_name"]))
-    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), title="Normalised metrics")
+        fig.add_trace(
+            go.Scatterpolar(
+                r=vals + vals[:1],
+                theta=metrics + metrics[:1],
+                fill="toself",
+                name=row["model_name"],
+            )
+        )
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 1])), title="Normalised metrics"
+    )
     return fig
 
 
 def time_comparison(df: pd.DataFrame) -> go.Figure:
     ok = df[df.get("status", "ok") == "ok"]
     long = ok.melt(id_vars=["model_name"], value_vars=["training_time", "prediction_time_per_1k"])
-    fig = px.bar(long, x="model_name", y="value", color="variable", barmode="group", log_y=True, color_discrete_sequence=PALETTE)
+    fig = px.bar(
+        long,
+        x="model_name",
+        y="value",
+        color="variable",
+        barmode="group",
+        log_y=True,
+        color_discrete_sequence=PALETTE,
+    )
     fig.update_layout(title="Training vs prediction time (log y)")
     return fig
 
@@ -64,7 +88,14 @@ def accuracy_vs_time_scatter(df: pd.DataFrame, pareto: list[str] | None = None) 
 
 def cv_boxplot(fold_scores: pd.DataFrame) -> go.Figure:
     long = fold_scores.melt(var_name="model_name", value_name="score")
-    return px.box(long, x="model_name", y="score", color="model_name", color_discrete_sequence=PALETTE, title="CV fold variance")
+    return px.box(
+        long,
+        x="model_name",
+        y="score",
+        color="model_name",
+        color_discrete_sequence=PALETTE,
+        title="CV fold variance",
+    )
 
 
 def confusion_matrix_heatmap(y_true, y_pred, labels=None) -> go.Figure:
@@ -85,8 +116,12 @@ def roc_curves(y_true, y_proba) -> go.Figure:
     return fig
 
 
-def score_breakdown_stacked_bar(scored_df: pd.DataFrame, weight_cols: list[str] | None = None) -> go.Figure:
+def score_breakdown_stacked_bar(
+    scored_df: pd.DataFrame, weight_cols: list[str] | None = None
+) -> go.Figure:
     ok = scored_df[~scored_df.get("excluded", False)]
-    fig = px.bar(ok, x="model_name", y="composite_score", color="model_name", color_discrete_sequence=PALETTE)
+    fig = px.bar(
+        ok, x="model_name", y="composite_score", color="model_name", color_discrete_sequence=PALETTE
+    )
     fig.update_layout(title="Composite recommendation score", showlegend=False)
     return fig

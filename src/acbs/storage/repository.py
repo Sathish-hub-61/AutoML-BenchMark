@@ -6,6 +6,7 @@ import pandas as pd
 from sqlalchemy.orm import Session
 
 from acbs.storage.models import DatasetRow, ExperimentRow, ModelRunRow, RecommendationRow
+from acbs.utils.jsonsafe import json_safe
 
 
 class Repository:
@@ -28,7 +29,9 @@ class Repository:
     def list_datasets(self) -> list[DatasetRow]:
         return list(self.session.query(DatasetRow).order_by(DatasetRow.id.desc()).all())
 
-    def create_experiment(self, dataset_id: int, config: dict, preferences: dict, seed: int) -> ExperimentRow:
+    def create_experiment(
+        self, dataset_id: int, config: dict, preferences: dict, seed: int
+    ) -> ExperimentRow:
         row = ExperimentRow(
             dataset_id=dataset_id,
             config_json=config,
@@ -56,6 +59,8 @@ class Repository:
         row = self.session.get(ExperimentRow, experiment_id)
         if row is None:
             raise KeyError(experiment_id)
+        # Sanitise before the JSON column: NaN literals are illegal on jsonb.
+        result_dict = json_safe(result_dict)
         row.result_json = result_dict
         row.lib_versions_json = result_dict.get("lib_versions")
         row.model_runs.clear()
@@ -63,6 +68,13 @@ class Repository:
             row.model_runs.append(
                 ModelRunRow(
                     model_name=m["model_name"],
+                    kind=m.get("kind", "classic"),
+                    framework=m.get("framework"),
+                    framework_version=m.get("framework_version"),
+                    budget_s=m.get("budget_s"),
+                    budget_used_s=m.get("training_time") if m.get("kind") == "automl" else None,
+                    peak_mem_mb=m.get("peak_mem_mb"),
+                    model_summary=m.get("model_summary"),
                     status=m.get("status", "ok"),
                     error=m.get("error"),
                     notes=m.get("notes"),
@@ -76,15 +88,19 @@ class Repository:
             )
         self.session.commit()
 
-    def save_recommendation(self, experiment_id: int, model_name: str, table: Any, explanation: dict, stability: float):
+    def save_recommendation(
+        self, experiment_id: int, model_name: str, table: Any, explanation: dict, stability: float
+    ):
         row = self.session.get(ExperimentRow, experiment_id)
         if row is None:
             raise KeyError(experiment_id)
-        rec = row.recommendation or RecommendationRow(experiment_id=experiment_id, model_name=model_name)
+        rec = row.recommendation or RecommendationRow(
+            experiment_id=experiment_id, model_name=model_name
+        )
         rec.model_name = model_name
-        rec.score_table_json = table
-        rec.explanation_json = explanation
-        rec.stability_pct = stability
+        rec.score_table_json = json_safe(table)
+        rec.explanation_json = json_safe(explanation)
+        rec.stability_pct = stability if stability == stability else None  # NaN -> NULL
         row.recommendation = rec
         self.session.commit()
 

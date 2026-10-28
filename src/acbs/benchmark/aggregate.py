@@ -12,11 +12,19 @@ def results_to_dataframe(result: BenchmarkResult) -> pd.DataFrame:
     for m in result.models:
         row = {
             "model_name": m.model_name,
+            "kind": m.kind,
+            "framework": m.framework,
+            "framework_version": m.framework_version,
             "status": m.status,
             "notes": m.notes,
             "error": m.error,
             "training_time": m.training_time,
             "prediction_time_per_1k": m.prediction_time_per_1k,
+            "budget_s": m.budget_s,
+            "budget_used_ratio": m.budget_used_ratio,
+            "n_models_evaluated": m.n_models_evaluated,
+            "model_summary": m.model_summary,
+            "peak_mem_mb": m.peak_mem_mb,
             "interpretability_score": m.interpretability_score,
             "best_params": m.best_params,
         }

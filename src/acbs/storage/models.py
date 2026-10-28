@@ -18,7 +18,6 @@ class Base(DeclarativeBase):
 JSONType = JSON().with_variant(SQLITE_JSON(), "sqlite")
 
 
-
 class DatasetRow(Base):
     __tablename__ = "datasets"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -30,7 +29,6 @@ class DatasetRow(Base):
     file_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     experiments: Mapped[list[ExperimentRow]] = relationship(back_populates="dataset")
-
 
 
 class ExperimentRow(Base):
@@ -47,8 +45,12 @@ class ExperimentRow(Base):
     lib_versions_json: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
     result_json: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    hardware_json: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
+    outer_fold: Mapped[int | None] = mapped_column(Integer, default=1, nullable=True)
     dataset: Mapped[DatasetRow] = relationship(back_populates="experiments")
-    model_runs: Mapped[list[ModelRunRow]] = relationship(back_populates="experiment", cascade="all, delete-orphan")
+    model_runs: Mapped[list[ModelRunRow]] = relationship(
+        back_populates="experiment", cascade="all, delete-orphan"
+    )
     recommendation: Mapped[RecommendationRow | None] = relationship(
         back_populates="experiment", uselist=False, cascade="all, delete-orphan"
     )
@@ -59,6 +61,16 @@ class ModelRunRow(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     experiment_id: Mapped[int] = mapped_column(ForeignKey("experiments.id"))
     model_name: Mapped[str] = mapped_column(String(128))
+    kind: Mapped[str | None] = mapped_column(String(32), default="classic", nullable=True)
+    framework: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    framework_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    budget_s: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    budget_used_s: Mapped[float | None] = mapped_column(Float, nullable=True)
+    n_cores: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    peak_mem_mb: Mapped[float | None] = mapped_column(Float, nullable=True)
+    model_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    leaderboard_json: Mapped[list | dict | None] = mapped_column(JSONType, nullable=True)
+    outcome_log_tail: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(32))
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -105,7 +117,4 @@ def init_db(engine=None) -> None:
     alembic_cfg.set_main_option("script_location", str(repo_root() / "alembic"))
     alembic_cfg.set_main_option("sqlalchemy.url", str(engine.url))
 
-    with engine.connect() as connection:
-        alembic_cfg.attributes["connection"] = connection
-        command.upgrade(alembic_cfg, "head")
-
+    command.upgrade(alembic_cfg, "head")

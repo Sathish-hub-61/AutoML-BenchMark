@@ -68,4 +68,14 @@ def tune_model(
 
     study.optimize(objective, n_trials=n_trials, timeout=timeout, catch=(Exception,))
     history = [{"number": t.number, "value": t.value, "params": t.params} for t in study.trials]
-    return dict(study.best_params) if study.best_trial else {}, history
+    # ``study.best_trial`` raises ValueError when every trial failed, so it cannot
+    # be used as a truthiness guard. Fall back to default params instead.
+    completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+    if not completed:
+        logger.warning(
+            "all %d tuning trials failed for %s; using default parameters",
+            len(study.trials),
+            spec.name,
+        )
+        return {}, history
+    return dict(study.best_params), history
