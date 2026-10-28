@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Run Monitor — ACBS</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+  </head>
+  <body data-page="monitor">
+    <main>
+      <div class="page-head">
+        <div>
+          <h1>Run monitor</h1>
+          <p class="sub" id="monitor-sub">Experiment status, live.</p>
+        </div>
+        <div class="row">
+          <a class="btn ghost" href="history.html">All experiments</a>
+          <button class="btn danger" id="cancel-btn" style="display: none">Cancel run</button>
+          <a class="btn primary" id="view-results" href="#" style="display: none">View results</a>
+        </div>
+      </div>
+
+      <section class="card mb-4">
+        <div class="row between">
+          <div>
+            <strong id="status-line">Loading…</strong>
+            <div class="small faint" id="message-line"></div>
+          </div>
+          <div class="mono" id="elapsed-line"></div>
+        </div>
+        <div class="progress mt-4"><div class="bar" id="progress-bar" style="width: 0%"></div></div>
+      </section>
+
+      <section>
+        <h2>Frameworks</h2>
+        <div id="monitor-grid" class="monitor-grid"></div>
+      </section>
+
+      <section id="error-box" class="mt-5"></section>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/components/ui.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/pages/monitor.js"></script>
+  </body>
+</html>

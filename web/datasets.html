@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Datasets — ACBS</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+  </head>
+  <body data-page="datasets">
+    <main>
+      <div class="page-head">
+        <div>
+          <h1>Datasets</h1>
+          <p class="sub">
+            Stored datasets plus the built-in registry. Imbalance and quality issues are reported as
+            warnings — the benchmark measures them, it does not silently fix them.
+          </p>
+        </div>
+        <label class="btn primary" for="upload-file">Upload CSV</label>
+        <input id="upload-file" type="file" accept=".csv,.parquet" style="display: none" />
+      </div>
+
+      <div id="upload-result"></div>
+
+      <section class="card mb-4">
+        <h3>Your datasets</h3>
+        <p class="card-sub">Uploaded or already registered for benchmarking.</p>
+        <div id="datasets-table"></div>
+      </section>
+
+      <section class="card">
+        <h3>Built-in registry</h3>
+        <p class="card-sub">Fetch a dataset and it becomes available for benchmarks.</p>
+        <div id="registry-table"></div>
+      </section>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/components/ui.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/pages/datasets.js"></script>
+  </body>
+</html>

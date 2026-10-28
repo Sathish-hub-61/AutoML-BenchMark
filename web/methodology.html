@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Methodology — ACBS</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+  </head>
+  <body data-page="methodology">
+    <main>
+      <div class="page-head">
+        <div>
+          <h1>Methodology</h1>
+          <p class="sub">
+            The protocol ACBS follows, why it is shaped this way, and where its results should be
+            read with care. Modeled on the OpenML AutoML Benchmark (AMLB).
+          </p>
+        </div>
+      </div>
+
+      <div class="grid cols-2">
+        <section class="card">
+          <h3>1. Identical conditions</h3>
+          <ul class="dim" style="padding-left: 18px">
+            <li>Every framework trains on the <strong>same stratified folds</strong>, same hold-out split.</li>
+            <li>One seed (default 42) drives splits, models and search.</li>
+            <li>One wall-clock budget per framework per fold, plus a grace period; the runner kills
+              the whole process tree when it expires.</li>
+            <li>Core and memory limits are passed through to each environment.</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h3>2. Central scoring</h3>
+          <ul class="dim" style="padding-left: 18px">
+            <li>Frameworks return <strong>predictions only</strong> — never their own score.</li>
+            <li>ACBS computes Accuracy, Precision, Recall, F1, ROC-AUC from stored predictions.</li>
+            <li>Binary problems are judged by the positive-class probability; multiclass by the
+              per-class matrix.</li>
+            <li>A constant-predictor floor scores every dataset, so a "good" number has a baseline.</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h3>3. Failures are results</h3>
+          <ul class="dim" style="padding-left: 18px">
+            <li>Each run ends as <code>ok</code>, <code>failed</code>, <code>timeout</code> or
+              <code>skipped</code> — recorded, never dropped.</li>
+            <li>One framework crashing cannot take the benchmark with it: it runs in its own
+              subprocess and environment.</li>
+            <li>The failure count is always visible next to the ranking.</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h3>4. Ranking &amp; recommendation</h3>
+          <ul class="dim" style="padding-left: 18px">
+            <li>Metrics are normalised and combined with your weights (weighted sum or TOPSIS).</li>
+            <li>Optional constraints (minimum recall, maximum training time) exclude models before
+              ranking — excluded models stay visible.</li>
+            <li>Stability is measured by perturbing the weights ±20% and re-ranking.</li>
+            <li>Pareto analysis of score vs training time shows the efficiency frontier.</li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="card mt-4">
+        <h3>Budget ladder</h3>
+        <p>
+          Ranks correlate strongly across budgets (the AMLB analysis reports &gt;0.96 between 30 and
+          60 minutes), so short budgets are a legitimate choice: ACBS offers 1 / 5 / 15 / 30 minute
+          presets, and short budgets automatically shrink per-framework search populations where a
+          framework's own timer would otherwise overrun its wall-clock limit.
+        </p>
+      </section>
+
+      <section class="card mt-4">
+        <h3>Caveats &amp; limitations</h3>
+        <ul class="dim" style="padding-left: 18px">
+          <li>Auto-sklearn is Linux-only; H2O requires a JVM; NaiveAutoML is experimental
+              (AMLB excluded it from its published analysis).</li>
+          <li>AutoML search can be non-deterministic even with fixed seeds; parallel libraries may
+              use slightly different thread counts per environment.</li>
+          <li>Default here: 3 folds (AMLB uses 10) — a documented, honest reduction for local
+              compute budgets.</li>
+          <li>The recommendation is only as good as the weights you give it; re-rank freely.</li>
+        </ul>
+      </section>
+
+      <section class="card mt-4">
+        <h3>References</h3>
+        <ul>
+          <li><a href="https://openml.github.io/automlbenchmark/" target="_blank" rel="noopener">OpenML AutoML Benchmark — documentation</a></li>
+          <li><a href="https://github.com/openml/automlbenchmark" target="_blank" rel="noopener">openml/automlbenchmark — source &amp; configs</a></li>
+          <li><a href="https://jmlr.org/papers/v25/22-0493.html" target="_blank" rel="noopener">AMLB paper (JMLR 2024): "An Evaluating and Comparing Toolkit for Automated Machine Learning"</a></li>
+          <li><a href="https://arxiv.org/html/2504.01222v1" target="_blank" rel="noopener">Shorter-budget study: ranks at reduced time budgets</a></li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/components/ui.js"></script>
+    <script src="js/shell.js"></script>
+  </body>
+</html>

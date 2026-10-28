@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Results — ACBS</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+  </head>
+  <body data-page="results">
+    <main>
+      <div class="page-head">
+        <div>
+          <h1 id="page-title">Results</h1>
+          <p class="sub" id="page-sub"></p>
+        </div>
+        <div class="btn-group" id="exports" style="display: none">
+          <a class="btn sm" id="btn-html" target="_blank" rel="noopener">HTML report</a>
+          <a class="btn sm" id="btn-csv">CSV</a>
+          <a class="btn sm" id="btn-pdf">PDF</a>
+          <a class="btn sm" id="btn-zip">Model zip</a>
+        </div>
+      </div>
+
+      <div id="body"></div>
+
+      <div id="content" style="display: none">
+        <section id="rec"></section>
+
+        <div class="mt-5">
+          <div class="tabs">
+            <button data-tab="tab-overview" class="active">Overview</button>
+            <button data-tab="tab-runs">Runs</button>
+            <button data-tab="tab-diag">Diagnostics</button>
+            <button data-tab="tab-fail">Failures</button>
+            <button data-tab="tab-rerank">Re-rank</button>
+            <button data-tab="tab-advisor">Advisor</button>
+          </div>
+
+          <div id="tab-overview" class="tab-panel active">
+            <div class="grid cols-2">
+              <div class="card">
+                <h3 id="bars-title">Composite ranking</h3>
+                <p class="card-sub">Higher is better; excluded models are dimmed.</p>
+                <div id="bars" class="chart"></div>
+              </div>
+              <div class="card">
+                <h3>Score vs training time</h3>
+                <p class="card-sub">Green points are on the Pareto front.</p>
+                <div id="pareto" class="chart"></div>
+              </div>
+            </div>
+            <div class="card mt-4">
+              <h3>Score table</h3>
+              <p class="card-sub">Every run with its composite score and rank under the current weights.</p>
+              <div id="score-table"></div>
+            </div>
+          </div>
+
+          <div id="tab-runs" class="tab-panel">
+            <div id="runs-table"></div>
+          </div>
+
+          <div id="tab-diag" class="tab-panel">
+            <div class="grid cols-2">
+              <div class="card">
+                <h3>Confusion matrix</h3>
+                <p class="card-sub" id="cm-sub">Recommended model, hold-out split.</p>
+                <div id="cm" class="chart"></div>
+              </div>
+              <div class="card">
+                <h3>ROC</h3>
+                <p class="card-sub">Hold-out split.</p>
+                <div id="roc" class="chart"></div>
+              </div>
+            </div>
+            <div class="card mt-4">
+              <h3>Calibration</h3>
+              <p class="card-sub">Predicted probability vs observed frequency (binary tasks).</p>
+              <div id="calib" class="chart"></div>
+            </div>
+          </div>
+
+          <div id="tab-fail" class="tab-panel">
+            <div id="fail-table"></div>
+          </div>
+
+          <div id="tab-rerank" class="tab-panel">
+            <div class="card">
+              <h3>Re-rank with different priorities</h3>
+              <p class="card-sub">
+                Weights are re-applied to the stored predictions — no retraining happens.
+              </p>
+              <div id="weights" class="grid cols-2"></div>
+              <div class="row mt-4">
+                <label class="field" style="margin: 0">
+                  <span class="lbl">Method</span>
+                  <select id="method" style="width: auto">
+                    <option value="weighted_sum">Weighted sum</option>
+                    <option value="topsis">TOPSIS</option>
+                  </select>
+                </label>
+                <button class="btn primary" id="rerank-btn">Re-rank</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-advisor" class="tab-panel">
+            <div class="card">
+              <h3>Benchmark Advisor</h3>
+              <p class="card-sub">
+                Narrates the stored recommendation. Requires the advisor gateway
+                (<code>RESPAN_API_KEY</code>); without it the template explanation above stands.
+              </p>
+              <div class="row" id="chips">
+                <button class="chip" data-q="Explain this result">Explain this result</button>
+                <button class="chip" data-q="Why did a framework fail?">Why did a framework fail?</button>
+                <button class="chip" data-q="Is AutoML worth it here?">Is AutoML worth it here?</button>
+              </div>
+              <div class="mt-4">
+                <label class="field">
+                  <span class="lbl">Or ask your own question</span>
+                  <input type="text" id="advisor-q" placeholder="e.g. Why not the random forest?" />
+                </label>
+                <button class="btn primary" id="advisor-btn">Ask</button>
+              </div>
+              <div id="advisor-out" class="mt-4"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/components/ui.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/pages/results.js"></script>
+  </body>
+</html>

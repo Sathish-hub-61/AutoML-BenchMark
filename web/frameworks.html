@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Frameworks — ACBS</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+  </head>
+  <body data-page="frameworks">
+    <main>
+      <div class="page-head">
+        <div>
+          <h1>Frameworks</h1>
+          <p class="sub">
+            Each framework runs in its own isolated environment with a hard wall-clock budget.
+            Install state, OS support and per-framework notes are shown as they are.
+          </p>
+        </div>
+        <button class="btn" id="refresh">Refresh</button>
+      </div>
+
+      <div id="table"></div>
+
+      <div class="grid cols-3 mt-5">
+        <div class="card">
+          <h3>Install / repair</h3>
+          <p class="card-sub">Missing environment? Build or rebuild it:</p>
+          <code class="mono small">python scripts/setup_envs.py --framework &lt;id&gt;</code>
+        </div>
+        <div class="card">
+          <h3>Platform notes</h3>
+          <p class="card-sub">
+            Auto-sklearn is Linux-only (use WSL2 or Docker on Windows). H2O needs a JVM
+            (<code>java -version</code>). NaiveAutoML is labelled experimental.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Fair-run rules</h3>
+          <p class="card-sub">
+            Every framework gets the same folds, seed and budget (+grace). Failures and timeouts are
+            recorded as results — never dropped.
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/components/ui.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/pages/frameworks.js"></script>
+  </body>
+</html>

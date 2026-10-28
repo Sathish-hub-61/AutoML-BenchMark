@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ACBS — Auto Classifier Benchmarking System</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+  </head>
+  <body data-page="home">
+    <main>
+      <section class="hero">
+        <h1>Benchmark AutoML frameworks on equal terms.</h1>
+        <p>
+          ACBS runs every framework on identical folds, one seed and one wall-clock budget, scores all
+          predictions centrally, records failures instead of hiding them, and recommends the model that
+          fits your priorities.
+        </p>
+        <div class="actions">
+          <a class="btn primary" href="new-benchmark.html">Start a benchmark</a>
+          <a class="btn" href="datasets.html">Browse datasets</a>
+          <a class="btn ghost" href="methodology.html">Read the protocol</a>
+        </div>
+      </section>
+
+      <section class="stat-row" id="stats"></section>
+
+      <section class="grid cols-2">
+        <div class="card">
+          <h3>Recent experiments</h3>
+          <p class="card-sub">Your latest runs and their status.</p>
+          <div id="recent"></div>
+        </div>
+        <div class="card">
+          <h3>Quick start</h3>
+          <p class="card-sub">Three steps to a defensible model choice.</p>
+          <ol class="dim" style="padding-left: 18px; line-height: 1.9">
+            <li>Pick a built-in dataset or upload a CSV with a target column.</li>
+            <li>Choose frameworks — or let the selector size the run to your data.</li>
+            <li>
+              Read the <a href="results.html">results</a>: recommendation, Pareto of score vs training
+              time, diagnostics and failures.
+            </li>
+          </ol>
+          <div class="notice mt-4">
+            Frameworks run in isolated environments with a hard budget. Failed or timed-out runs are
+            recorded as results, never silently dropped.
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/components/ui.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/pages/home.js"></script>
+  </body>
+</html>

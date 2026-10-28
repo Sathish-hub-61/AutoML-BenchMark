@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>New Benchmark — ACBS</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+  </head>
+  <body data-page="new">
+    <main>
+      <div class="page-head">
+        <div>
+          <h1>New benchmark</h1>
+          <p class="sub">
+            Same folds, same seed, same budget for every framework. The cost estimate updates as you
+            change the configuration.
+          </p>
+        </div>
+        <div class="row">
+          <div class="card" style="padding: 10px 16px">
+            <div class="label small faint">Estimated cost</div>
+            <div class="mono" id="estimate" style="font-size: 20px">—</div>
+          </div>
+        </div>
+      </div>
+
+      <form id="bench-form">
+        <div class="grid cols-2">
+          <div>
+            <fieldset>
+              <legend>Dataset</legend>
+              <label class="field">
+                <span class="lbl">Dataset</span>
+                <select id="dataset" required></select>
+              </label>
+              <p class="small faint" id="dataset-hint">Loading datasets…</p>
+            </fieldset>
+
+            <fieldset>
+              <legend>Frameworks</legend>
+              <label class="check">
+                <input type="radio" name="fw-mode" value="auto" checked />
+                <span>
+                  <span class="t">Auto-select</span><br />
+                  <span class="small">Pick installed, OS-supported frameworks sized to this dataset.</span>
+                </span>
+              </label>
+              <label class="check">
+                <input type="radio" name="fw-mode" value="manual" />
+                <span>
+                  <span class="t">Choose manually</span>
+                </span>
+              </label>
+              <div id="framework-list" class="stack" style="margin-top: 8px; display: none"></div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Time budget per framework &amp; fold</legend>
+              <div class="btn-group" id="budget-presets">
+                <button type="button" class="btn sm" data-s="60">1 min</button>
+                <button type="button" class="btn sm" data-s="300">5 min</button>
+                <button type="button" class="btn sm" data-s="900">15 min</button>
+                <button type="button" class="btn sm" data-s="1800">30 min</button>
+              </div>
+              <label class="field mt-4">
+                <span class="lbl">Custom budget (seconds)</span>
+                <input type="number" id="budget" value="60" min="5" max="10800" />
+              </label>
+            </fieldset>
+          </div>
+
+          <div>
+            <fieldset>
+              <legend>Protocol</legend>
+              <div class="grid cols-2">
+                <label class="field">
+                  <span class="lbl">Folds (1–10)</span>
+                  <input type="number" id="folds" value="3" min="1" max="10" />
+                </label>
+                <label class="field">
+                  <span class="lbl">Seed</span>
+                  <input type="number" id="seed" value="42" />
+                </label>
+              </div>
+              <label class="field">
+                <span class="lbl">Primary metric</span>
+                <select id="metric">
+                  <option value="f1_macro">F1 macro</option>
+                  <option value="accuracy">Accuracy</option>
+                  <option value="roc_auc">ROC AUC</option>
+                  <option value="precision_macro">Precision macro</option>
+                  <option value="recall_macro">Recall macro</option>
+                </select>
+              </label>
+              <label class="check">
+                <input type="checkbox" id="classic" />
+                <span>
+                  <span class="t">Include classic baselines</span><br />
+                  <span class="small">Logistic regression, SVM, trees, forests, boosting, NB, KNN.</span>
+                </span>
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Recommendation preferences</legend>
+              <p class="small faint">Weights used to rank and recommend a winner.</p>
+              <div id="weights"></div>
+              <label class="field mt-4">
+                <span class="lbl">Ranking method</span>
+                <select id="method">
+                  <option value="weighted_sum">Weighted sum</option>
+                  <option value="topsis">TOPSIS</option>
+                </select>
+              </label>
+            </fieldset>
+          </div>
+        </div>
+
+        <div class="row between mt-4">
+          <div class="small faint" id="form-hint"></div>
+          <div class="btn-group">
+            <a class="btn ghost" href="history.html">Cancel</a>
+            <button type="submit" class="btn primary" id="start-btn">Start benchmark</button>
+          </div>
+        </div>
+      </form>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/components/ui.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/pages/new-benchmark.js"></script>
+  </body>
+</html>
