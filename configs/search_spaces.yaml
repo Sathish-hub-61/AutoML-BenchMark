@@ -33,3 +33,4 @@ knn:
   n_neighbors: {type: int, low: 3, high: 31}
   weights: {type: categorical, choices: [uniform, distance]}
   p: {type: categorical, choices: [1, 2]}
+dummy: {}

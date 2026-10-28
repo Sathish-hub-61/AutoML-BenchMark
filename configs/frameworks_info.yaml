@@ -1,0 +1,61 @@
+# AutoML framework metadata, search strategies, and defaults
+frameworks:
+  autogluon:
+    name: "AutoGluon"
+    strategy: "Stacked ensembles of preset pipelines"
+    kind: "stacked_ensemble"
+    interpretability: 1
+
+  autosklearn:
+    name: "Auto-sklearn"
+    strategy: "Bayesian optimisation of scikit-learn pipelines"
+    kind: "single_pipeline"
+    interpretability: 2
+
+  autosklearn2:
+    name: "Auto-sklearn 2"
+    strategy: "Bayesian optimisation of iterative algorithms"
+    kind: "single_pipeline"
+    interpretability: 2
+
+  flaml:
+    name: "FLAML"
+    strategy: "Cost-frugal optimisation"
+    kind: "single_pipeline"
+    interpretability: 2
+
+  gama:
+    name: "GAMA"
+    strategy: "Evolutionary optimisation of scikit-learn pipelines"
+    kind: "single_pipeline"
+    interpretability: 2
+
+  h2o:
+    name: "H2O AutoML"
+    strategy: "Random search + ensembling"
+    kind: "stacked_ensemble"
+    interpretability: 1
+
+  lightautoml:
+    name: "LightAutoML"
+    strategy: "Bayesian optimisation of linear models and GBMs"
+    kind: "stacked_ensemble"
+    interpretability: 1
+
+  mljar:
+    name: "MLJAR"
+    strategy: "Custom data-science pipeline"
+    kind: "single_pipeline"
+    interpretability: 2
+
+  naiveautoml:
+    name: "NaiveAutoML"
+    strategy: "Sequential algorithm selection with hyperparameter optimisation"
+    kind: "single_pipeline"
+    interpretability: 2
+
+  tpot:
+    name: "TPOT"
+    strategy: "Evolutionary optimisation of scikit-learn pipelines"
+    kind: "single_pipeline"
+    interpretability: 2

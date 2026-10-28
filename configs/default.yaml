@@ -35,3 +35,28 @@ weights:
   train_time: 0.1
   predict_time: 0.05
   interpretability: 0.05
+
+automl_interpretability:
+  stacked_ensemble: 1
+  single_pipeline: 2
+  autogluon: 1
+  h2o: 1
+  lightautoml: 1
+  flaml: 2
+  gama: 2
+  mljar: 2
+  naiveautoml: 2
+  tpot: 2
+  autosklearn: 2
+  autosklearn2: 2
+
+# Optional AI advisor: narrates the stored recommendation through the hosted
+# Respan gateway (needs RESPAN_API_KEY in the server environment).
+advisor:
+  model: gpt-5.5
+  max_tokens: 600
+
+automl_value_thresholds:
+  f1_worth_it_delta: 0.02
+  max_training_time_ratio: 20.0
+

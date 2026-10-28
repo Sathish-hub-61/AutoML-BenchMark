@@ -1,0 +1,127 @@
+# Specification of the 9 AutoML frameworks (10 adapter IDs, since Auto-sklearn 2 shares package)
+frameworks:
+  autogluon:
+    name: "AutoGluon"
+    strategy: "Stacked ensembles of preset pipelines"
+    pip_packages:
+      - "autogluon.tabular>=1.1.0"
+      - "numpy<2.0.0"
+      - "pandas"
+      - "pyarrow"
+    preferred_python: "3.11"
+    system_requirements: "8+ GB RAM, PyTorch compatible CPU/GPU"
+    smoke_import: "autogluon.tabular.TabularPredictor"
+
+  autosklearn:
+    name: "Auto-sklearn"
+    strategy: "Bayesian optimization of scikit-learn pipelines"
+    pip_packages:
+      - "auto-sklearn>=0.15.0"
+      - "numpy<2.0.0"
+      - "pandas"
+      - "pyarrow"
+    preferred_python: "3.10"
+    system_requirements: "Linux, C++ compiler, SWIG (unsupported natively on Windows)"
+    smoke_import: "autosklearn.classification.AutoSklearnClassifier"
+
+  autosklearn2:
+    name: "Auto-sklearn 2"
+    strategy: "Bayesian optimization of iterative algorithms"
+    pip_packages:
+      - "auto-sklearn>=0.15.0"
+      - "numpy<2.0.0"
+      - "pandas"
+      - "pyarrow"
+    preferred_python: "3.10"
+    system_requirements: "Linux, C++ compiler, SWIG (unsupported natively on Windows)"
+    smoke_import: "autosklearn.experimental.askl2.AutoSklearn2Classifier"
+
+  flaml:
+    name: "FLAML"
+    strategy: "Cost-frugal optimization"
+    pip_packages:
+      - "flaml[automl]>=2.1.2"
+      - "numpy"
+      - "pandas"
+      - "pyarrow"
+    preferred_python: "3.11"
+    system_requirements: "Standard CPU"
+    smoke_import: "flaml.AutoML"
+
+  gama:
+    name: "GAMA"
+    strategy: "Evolutionary optimization of scikit-learn pipelines"
+    pip_packages:
+      - "gama>=23.0.0"
+      - "numpy<2.0.0"
+      - "pandas"
+      - "pyarrow"
+    preferred_python: "3.10"
+    system_requirements: "Standard CPU"
+    smoke_import: "gama.GamaClassifier"
+
+  h2o:
+    name: "H2O AutoML"
+    strategy: "Random search + stacked ensembling"
+    pip_packages:
+      - "h2o>=3.44.0"
+      - "numpy"
+      - "pandas"
+      - "pyarrow"
+    preferred_python: "3.11"
+    system_requirements: "Java JDK 8-21 (OpenJDK 21 is installed)"
+    smoke_import: "h2o.automl.H2OAutoML"
+
+  lightautoml:
+    name: "LightAutoML"
+    strategy: "Bayesian optimization of linear models and GBMs"
+    pip_packages:
+      - "lightautoml>=0.3.8"
+      - "numpy<2.0.0"
+      - "pandas"
+      - "pyarrow"
+    preferred_python: "3.10"
+    system_requirements: "Standard CPU, PyTorch"
+    smoke_import: "lightautoml.automl.presets.tabular.TabularAutoML"
+
+  mljar:
+    name: "MLJAR"
+    strategy: "Custom data-science pipeline"
+    pip_packages:
+      - "mljar-supervised>=1.1.0"
+      - "numpy<2.0.0"
+      - "pandas"
+      - "pyarrow"
+    preferred_python: "3.10"
+    system_requirements: "Standard CPU"
+    smoke_import: "supervised.automl.AutoML"
+
+  naiveautoml:
+    name: "NaiveAutoML"
+    strategy: "Sequential algorithm selection with HPO"
+    pip_packages:
+      - "naiveautoml>=0.1.6"
+      - "numpy"
+      - "pandas"
+      - "pyarrow"
+      - "setuptools<70"   # provides pkg_resources (dropped in setuptools>=70)
+    preferred_python: "3.11"
+    system_requirements: "Standard CPU"
+    smoke_import: "naiveautoml.NaiveAutoML"
+    windows_notes: >
+      naiveautoml<=0.1.6 has a known upstream bug (KeyError: nan in
+      _sklearn_hpo.get_config_space_for_selected_algorithms) that prevents
+      fitting on Windows. Status will be reported as 'failed' until fixed upstream.
+
+  tpot:
+    name: "TPOT"
+    strategy: "Evolutionary optimization of scikit-learn pipelines"
+    pip_packages:
+      - "tpot>=0.12.2"
+      - "numpy<2.0.0"
+      - "pandas"
+      - "pyarrow"
+      - "setuptools<70"   # provides pkg_resources required by tpot/deap
+    preferred_python: "3.11"
+    system_requirements: "Standard CPU"
+    smoke_import: "tpot.TPOTClassifier"

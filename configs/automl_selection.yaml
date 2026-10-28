@@ -1,0 +1,55 @@
+# Automatic AutoML framework selection policy (used by acbs.automl.selection).
+# The system picks frameworks with no human input: only installed, OS-supported
+# environments are candidates; per-framework dataset constraints are applied;
+# then candidates fill the available wall-clock budget, preferring search-strategy
+# diversity first and priority second.
+
+# Per-dataset-size time budget (seconds) applied when the caller does not
+# specify one. size_category comes from the dataset profiler
+# (small <= 5k rows, medium <= 100k, large above).
+budget_by_size:
+  small: 60
+  medium: 120
+  large: 300
+default_budget_s: 60
+
+# Wall-clock cap for the whole AutoML tier of one experiment, and how many
+# frameworks may be selected at most. Each framework is charged
+# budget_s * wall_clock_multiplier against total_wall_budget_s.
+total_wall_budget_s: 900
+wall_clock_multiplier: 1.25
+max_frameworks: 4
+
+# Lower priority runs first. Frameworks missing from this map get priority 99.
+# min_rows / max_rows are dataset constraints evaluated against profile.n_rows.
+frameworks:
+  flaml:
+    priority: 1
+    max_rows: 500000
+  autogluon:
+    priority: 2
+    max_rows: 200000
+  lightautoml:
+    priority: 3
+    max_rows: 300000
+  mljar:
+    priority: 4
+    max_rows: 50000
+  h2o:
+    priority: 5
+    max_rows: 500000
+  gama:
+    priority: 6
+    max_rows: 50000
+  tpot:
+    priority: 7
+    max_rows: 10000
+  naiveautoml:
+    priority: 8
+    max_rows: 20000
+  autosklearn2:
+    priority: 9
+    max_rows: 30000
+  autosklearn:
+    priority: 10
+    max_rows: 30000

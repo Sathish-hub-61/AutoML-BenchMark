@@ -1,0 +1,26 @@
+# Automatic target-column detection for uploaded CSVs (acbs.data.target_detection).
+# Order of preference:
+#   1. A column whose name matches one of preferred_names (case-insensitive).
+#   2. Failing that, the last column that looks like a classification target
+#      (the common CSV convention is target-last).
+# A valid target has between min_classes and max_classes distinct values and is
+# not near-unique (an id column or a continuous target fails that check).
+
+preferred_names:
+  - target
+  - label
+  - class
+  - outcome
+  - diagnosis
+  - result
+  - answer
+  - sentiment
+  - species
+  - y
+
+min_classes: 2
+max_classes: 100
+max_unique_ratio: 0.5
+
+# Read at most this many rows when sniffing a file for the target column.
+detection_max_rows: 200000
