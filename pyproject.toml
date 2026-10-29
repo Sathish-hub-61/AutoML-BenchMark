@@ -75,3 +75,9 @@ ignore = ["E501", "B008"]
 [tool.mypy]
 python_version = "3.11"
 ignore_missing_imports = true
+
+[tool.vercel]
+entrypoint = "src.acbs.api:app"
+
+[tool.vercel.scripts]
+build = "pip install ."
