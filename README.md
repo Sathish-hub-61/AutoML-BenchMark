@@ -1,8 +1,6 @@
 # Auto Classifier Benchmarking System (`acbs v3`)
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 A reproducible, fair benchmarking and recommendation system that compares **8 AutoML frameworks** (AutoGluon, FLAML, GAMA, H2O, LightAutoML, MLJAR, NaiveAutoML, TPOT) and **8 classic ML classifiers** on tabular datasets under unified protocols, answering:
 
@@ -15,7 +13,7 @@ A reproducible, fair benchmarking and recommendation system that compares **8 Au
 1. **Two-Tier Fair Protocol**:
    - **Tier 1 (Classic ML)**: 8 classic models (Logistic Regression, SVM, Decision Tree, Random Forest, XGBoost, Gradient Boosting, Naive Bayes, KNN) + `DummyClassifier` baseline evaluated inside strict, leak-free scikit-learn pipelines.
    - **Tier 2 (AutoML Contenders)**: 8 state-of-the-art AutoML frameworks evaluated on raw, unmodified tabular features.
-2. **Upload-Only Dataset Workflow**: no built-in datasets — you upload your own CSV/Parquet in the UI, and it is stored under `data/raw/` for the benchmark.
+2. **Upload Dataset Workflow**: upload your own CSV/Parquet in the UI, and it is stored under `data/raw/` for the benchmark.
 3. **Subprocess Isolation**:
    - Each AutoML framework executes inside its own dedicated virtualenv (`.envs/<framework>/`), preventing PyTorch, NumPy, or scikit-learn version conflicts. A failing or hanging framework is recorded as `failed`/`timeout` and never aborts the run.
 4. **Central Scoring Guarantee**:
@@ -50,10 +48,7 @@ python scripts/setup_envs.py
 python scripts/smoke_test_envs.py   # optional: verify all 8 frameworks import and fit
 ```
 
-### 3. Launch the System
-```bash
-uvicorn acbs.api.main:app --reload --port 8000
-```
+
 
 Open [http://localhost:8000](http://localhost:8000) in your browser — the backend serves both the API and the web UI. Upload a dataset on the **Datasets** page, then start a benchmark from **New Benchmark**.
 
