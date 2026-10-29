@@ -6,18 +6,6 @@ frameworks:
     kind: "stacked_ensemble"
     interpretability: 1
 
-  autosklearn:
-    name: "Auto-sklearn"
-    strategy: "Bayesian optimisation of scikit-learn pipelines"
-    kind: "single_pipeline"
-    interpretability: 2
-
-  autosklearn2:
-    name: "Auto-sklearn 2"
-    strategy: "Bayesian optimisation of iterative algorithms"
-    kind: "single_pipeline"
-    interpretability: 2
-
   flaml:
     name: "FLAML"
     strategy: "Cost-frugal optimisation"

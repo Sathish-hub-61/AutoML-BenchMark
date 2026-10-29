@@ -18,8 +18,6 @@ from acbs.utils.paths import repo_root
 # All canonical framework IDs.
 CANONICAL_FRAMEWORK_IDS = [
     "autogluon",
-    "autosklearn",
-    "autosklearn2",
     "flaml",
     "gama",
     "h2o",
@@ -28,8 +26,6 @@ CANONICAL_FRAMEWORK_IDS = [
     "naiveautoml",
     "tpot",
 ]
-
-_LINUX_ONLY = {"autosklearn", "autosklearn2"}
 
 
 def _framework_meta() -> dict:
@@ -81,11 +77,7 @@ def framework_availability() -> list[dict]:
         os_supported = True
         reason = None
 
-        if is_windows and fid in _LINUX_ONLY:
-            os_supported = False
-            installed = False
-            reason = "Linux only (requires C++ compiler and SWIG). Run under WSL2 or Docker."
-        elif not installed:
+        if not installed:
             reason = f"Virtualenv not configured under .envs/{fid}/. Run scripts/setup_envs.py"
         elif compat.get("status") == "failed":
             reason = compat.get("error") or "Framework compatibility test failed."

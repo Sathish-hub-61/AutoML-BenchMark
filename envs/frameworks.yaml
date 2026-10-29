@@ -1,4 +1,4 @@
-# Specification of the 9 AutoML frameworks (10 adapter IDs, since Auto-sklearn 2 shares package)
+# Specification of the 8 AutoML frameworks
 frameworks:
   autogluon:
     name: "AutoGluon"
@@ -11,30 +11,6 @@ frameworks:
     preferred_python: "3.11"
     system_requirements: "8+ GB RAM, PyTorch compatible CPU/GPU"
     smoke_import: "autogluon.tabular.TabularPredictor"
-
-  autosklearn:
-    name: "Auto-sklearn"
-    strategy: "Bayesian optimization of scikit-learn pipelines"
-    pip_packages:
-      - "auto-sklearn>=0.15.0"
-      - "numpy<2.0.0"
-      - "pandas"
-      - "pyarrow"
-    preferred_python: "3.10"
-    system_requirements: "Linux, C++ compiler, SWIG (unsupported natively on Windows)"
-    smoke_import: "autosklearn.classification.AutoSklearnClassifier"
-
-  autosklearn2:
-    name: "Auto-sklearn 2"
-    strategy: "Bayesian optimization of iterative algorithms"
-    pip_packages:
-      - "auto-sklearn>=0.15.0"
-      - "numpy<2.0.0"
-      - "pandas"
-      - "pyarrow"
-    preferred_python: "3.10"
-    system_requirements: "Linux, C++ compiler, SWIG (unsupported natively on Windows)"
-    smoke_import: "autosklearn.experimental.askl2.AutoSklearn2Classifier"
 
   flaml:
     name: "FLAML"

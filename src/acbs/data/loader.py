@@ -184,3 +184,19 @@ def load_dataset(name_or_path: str, target: str | None = None) -> LoadedDataset:
     except Exception:
         pass
     return _from_frame(df, target, {**entry, "cached": False})
+
+
+def load_dataset_row(row: Any) -> LoadedDataset:
+    """Load the dataset a stored ``DatasetRow`` refers to.
+
+    Uploaded files are re-read from ``data/raw``; rows from other sources
+    fall back to :func:`load_dataset`. The target column comes from the
+    profile's ``meta.target_column`` recorded when the dataset was stored.
+    """
+    meta = (getattr(row, "profile_json", None) or {}).get("meta") or {}
+    target = meta.get("target_column")
+    if row.source == "upload":
+        if not target:
+            raise DatasetError(f"Uploaded dataset '{row.name}' has no recorded target column")
+        return load_local(repo_root() / "data" / "raw" / row.name, target)
+    return load_dataset(row.name, target)

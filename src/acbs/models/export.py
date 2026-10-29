@@ -30,7 +30,7 @@ import sklearn
 import yaml
 from sklearn.pipeline import Pipeline as SkPipeline
 
-from acbs.data.loader import load_dataset
+from acbs.data.loader import load_dataset_row
 from acbs.data.profiler import profile_dataset
 from acbs.models.registry import get_models
 from acbs.preprocessing.pipeline import build_preprocessor
@@ -46,6 +46,10 @@ def export_experiment_model(experiment: ExperimentRow, output_dir: Path | None =
         raise ValueError(f"Experiment #{experiment.id} has no recommendation to export.")
 
     winner_name = experiment.recommendation.model_name
+    if experiment.dataset is None:
+        raise ValueError(
+            f"Experiment #{experiment.id}: the dataset it ran on no longer exists; cannot export."
+        )
     winner_run = None
     for run in experiment.model_runs:
         if run.model_name == winner_name:
@@ -56,8 +60,6 @@ def export_experiment_model(experiment: ExperimentRow, output_dir: Path | None =
         winner_name
         in {
             "autogluon",
-            "autosklearn",
-            "autosklearn2",
             "flaml",
             "gama",
             "h2o",
@@ -93,7 +95,7 @@ def _bundle_classic_model(
     zf: zipfile.ZipFile,
 ) -> None:
     ds_row = experiment.dataset
-    ds = load_dataset(ds_row.name)
+    ds = load_dataset_row(ds_row)
     X = ds.X
     y = ds.y
     target_col = ds.meta.get("target_column") or getattr(ds_row, "target_column", "target")

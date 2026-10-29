@@ -23,8 +23,8 @@ This checklist must be verified manually after launching the Streamlit app
 - [ ] No framework checkboxes in the default flow — the system selects installed frameworks itself
 - [ ] Upload → run redirects straight to the Progress page (no further clicks)
 - [ ] "⚙️ Advanced settings" expander still exposes:
-  - [ ] Built-in registry loader, classic-model multiselect, tuning/CV/trial controls
-  - [ ] "Choose AutoML frameworks myself" → the 10 framework cards with correct badges
+  - [ ] Classic-model multiselect, tuning/CV/trial controls
+  - [ ] "Choose AutoML frameworks myself" → the 8 framework cards with correct badges
   - [ ] Budget presets (Auto / Quick / Standard / Extended / Custom) + n_jobs slider
   - [ ] Priority preset and custom weights
 - [ ] Estimate > 1 hour (manual mode) → warning + confirmation checkbox appears

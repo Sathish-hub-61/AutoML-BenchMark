@@ -278,20 +278,6 @@ def test_env(framework_id: str, spec: dict) -> dict:
     env_dir = root / ".envs" / framework_id
     python_exe = get_python_exe(env_dir)
 
-    is_windows = platform.system() == "Windows"
-    if is_windows and framework_id in {"autosklearn", "autosklearn2"}:
-        return {
-            "framework_id": framework_id,
-            "name": spec.get("name"),
-            "status": "unsupported",
-            "version": None,
-            "installed": False,
-            "binary_ok": False,
-            "multiclass_ok": False,
-            "wall_time_s": 0.0,
-            "error": "Linux only (requires C++ compiler and SWIG). Run under WSL2 or Docker.",
-        }
-
     if not python_exe.exists():
         return {
             "framework_id": framework_id,
@@ -309,10 +295,16 @@ def test_env(framework_id: str, spec: dict) -> dict:
     cmd = [str(python_exe), "-c", SMOKE_WORKER_SCRIPT, framework_id]
     try:
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-        output_lines = [line.strip() for line in res.stdout.splitlines() if line.strip().startswith("{")]
+        output_lines = [
+            line.strip() for line in res.stdout.splitlines() if line.strip().startswith("{")
+        ]
         if output_lines:
             result_data = json.loads(output_lines[-1])
-            status = "ok" if (result_data.get("binary_ok") and result_data.get("multiclass_ok")) else "failed"
+            status = (
+                "ok"
+                if (result_data.get("binary_ok") and result_data.get("multiclass_ok"))
+                else "failed"
+            )
             return {
                 "framework_id": framework_id,
                 "name": spec.get("name"),
@@ -328,7 +320,9 @@ def test_env(framework_id: str, spec: dict) -> dict:
                 "binary_ok": False,
                 "multiclass_ok": False,
                 "wall_time_s": 0.0,
-                "error": res.stderr.strip() or res.stdout.strip() or "No output returned from worker",
+                "error": res.stderr.strip()
+                or res.stdout.strip()
+                or "No output returned from worker",
             }
     except subprocess.TimeoutExpired:
         return {
@@ -361,13 +355,17 @@ def generate_markdown_report(results: dict[str, dict], out_path: Path) -> None:
         mc_ok = "✅" if data.get("multiclass_ok") else "❌"
         t = data.get("wall_time_s", 0.0)
         err = (data.get("error") or "").replace("\n", " ").replace("|", "\\|")[:80]
-        lines.append(f"| `{fid}` | {data.get('name')} | `{status}` | {installed} | {version} | {bin_ok} | {mc_ok} | {t}s | {err} |")
+        lines.append(
+            f"| `{fid}` | {data.get('name')} | `{status}` | {installed} | {version} | {bin_ok} | {mc_ok} | {t}s | {err} |"
+        )
 
     lines.append("")
     lines.append("## Recommendations for v1 Integration")
     lines.append("- Frameworks marked `ok` can be immediately supported in Phase C.")
-    lines.append("- Frameworks marked `unsupported` on Windows (e.g. `autosklearn`) require WSL2 or Docker backend.")
-    lines.append("- Frameworks failing due to dependency collisions must remain strictly isolated in their dedicated `.envs/` virtualenvs.")
+    lines.append("- Frameworks marked `unsupported` on Windows require a WSL2 or Docker backend.")
+    lines.append(
+        "- Frameworks failing due to dependency collisions must remain strictly isolated in their dedicated `.envs/` virtualenvs."
+    )
     lines.append("")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

@@ -6,11 +6,6 @@ This document details hardware dependencies, platform boundaries, library versio
 
 ## 1. Operating System & Platform Boundaries
 
-- **Auto-sklearn & Auto-sklearn 2**:
-  - Requires Linux, GNU C++ toolchain, and SWIG.
-  - On Windows 10/11 and macOS, these frameworks are recorded with status `unsupported` and message `"Linux only (requires C++ compiler and SWIG). Run under WSL2 or Docker."`.
-  - For reproduction of Linux-only frameworks, use the Docker container setup (`docker/frameworks/autosklearn/Dockerfile`).
-
 - **H2O AutoML**:
   - Requires a compatible Java Runtime Environment (JDK 8, 11, or 17).
   - If Java is absent on the host PATH, H2O will fail JVM startup and register status `unavailable`.

@@ -13,6 +13,7 @@ Usage:
   python scripts/run_automl_experiments.py --budget 60 --tier quick
   python scripts/run_automl_experiments.py --budget 300 --datasets breast_cancer,wine,adult
 """
+
 from __future__ import annotations
 
 import argparse
@@ -68,7 +69,11 @@ def _get_completed_keys(session) -> set[tuple[str, str, int]]:
         for exp in exps:
             for run in exp.model_runs:
                 if run.status == "ok":
-                    key = (exp.dataset.name, run.framework or run.model_name, int(run.budget_s or 0))
+                    key = (
+                        exp.dataset.name,
+                        run.framework or run.model_name,
+                        int(run.budget_s or 0),
+                    )
                     completed.add(key)
     except Exception as exc:
         logger.warning(f"Could not load completed experiments from DB: {exc}")
@@ -77,23 +82,47 @@ def _get_completed_keys(session) -> set[tuple[str, str, int]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run batch AutoML benchmark experiments.")
-    parser.add_argument("--budget", type=int, default=60, help="Per-framework budget in seconds (default: 60)")
-    parser.add_argument("--frameworks", type=str, default="autogluon,flaml,gama,h2o,lightautoml,mljar,tpot",
-                        help="Comma-separated AutoML framework IDs")
-    parser.add_argument("--datasets", type=str, default=None,
-                        help="Comma-separated dataset names (default: all registry datasets except kaggle)")
-    parser.add_argument("--outer-folds", type=int, default=1,
-                        help="Outer holdout/folds (1 = single 80/20 holdout, 3 = repeated)")
+    parser.add_argument(
+        "--budget", type=int, default=60, help="Per-framework budget in seconds (default: 60)"
+    )
+    parser.add_argument(
+        "--frameworks",
+        type=str,
+        default="autogluon,flaml,gama,h2o,lightautoml,mljar,tpot",
+        help="Comma-separated AutoML framework IDs",
+    )
+    parser.add_argument(
+        "--datasets",
+        type=str,
+        default=None,
+        help="Comma-separated dataset names (default: all registry datasets except kaggle)",
+    )
+    parser.add_argument(
+        "--outer-folds",
+        type=int,
+        default=1,
+        help="Outer holdout/folds (1 = single 80/20 holdout, 3 = repeated)",
+    )
     parser.add_argument("--n-jobs", type=int, default=4, help="CPU threads per framework")
-    parser.add_argument("--resume", action="store_true", default=True, help="Skip already completed runs")
-    parser.add_argument("--dry-run", action="store_true", help="Print runtime estimate and dataset plan only")
-    parser.add_argument("--output-csv", type=str, default="results/automl_benchmark_results.csv",
-                        help="Output path for consolidated CSV")
+    parser.add_argument(
+        "--resume", action="store_true", default=True, help="Skip already completed runs"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Print runtime estimate and dataset plan only"
+    )
+    parser.add_argument(
+        "--output-csv",
+        type=str,
+        default="results/automl_benchmark_results.csv",
+        help="Output path for consolidated CSV",
+    )
 
     args = parser.parse_args()
 
     fw_list = [f.strip() for f in args.frameworks.split(",") if f.strip()]
-    ds_filter = [d.strip() for d in args.datasets.split(",") if d.strip()] if args.datasets else None
+    ds_filter = (
+        [d.strip() for d in args.datasets.split(",") if d.strip()] if args.datasets else None
+    )
 
     datasets = _load_available_datasets(ds_filter)
     if not datasets:
@@ -102,7 +131,9 @@ def main() -> int:
 
     logger.info(f"Target datasets ({len(datasets)}): {[d['name'] for d in datasets]}")
     logger.info(f"Target AutoML frameworks ({len(fw_list)}): {fw_list}")
-    logger.info(f"Budget per framework: {args.budget}s | Outer folds: {args.outer_folds} | n_jobs: {args.n_jobs}")
+    logger.info(
+        f"Budget per framework: {args.budget}s | Outer folds: {args.outer_folds} | n_jobs: {args.n_jobs}"
+    )
 
     # Cost estimation
     cfg_for_est = BenchmarkConfig(
@@ -113,7 +144,9 @@ def main() -> int:
     )
     est = estimate_cost(cfg_for_est, n_datasets=len(datasets))
     total_min = est.get("total_minutes") or (est.get("total_seconds", 0) / 60.0)
-    logger.info(f"Estimated total wall time: {total_min:.1f} minutes (~{total_min / 60.0:.2f} hours)")
+    logger.info(
+        f"Estimated total wall time: {total_min:.1f} minutes (~{total_min / 60.0:.2f} hours)"
+    )
 
     if args.dry_run:
         logger.info("Dry-run complete. Exiting without execution.")
@@ -149,10 +182,7 @@ def main() -> int:
                 continue
 
             # Determine frameworks still needing run
-            pending_fws = [
-                fw for fw in fw_list
-                if (ds_name, fw, args.budget) not in completed_keys
-            ]
+            pending_fws = [fw for fw in fw_list if (ds_name, fw, args.budget) not in completed_keys]
 
             if not pending_fws and (ds_name, "random_forest", 0) in completed_keys:
                 logger.info(f"Dataset {ds_name} already completed in previous runs. Skipping.")
@@ -179,11 +209,13 @@ def main() -> int:
                 result = run_benchmark(
                     dataset=ds,
                     cfg=config.model_dump(),
-                    progress_callback=lambda name, step, total, message, status=None, elapsed_s=None: logger.info(
-                        "  [%3d%%] %s [%s]",
-                        int(100 * step / max(total, 1)),
-                        message,
-                        status or "running",
+                    progress_callback=lambda name, step, total, message, status=None, elapsed_s=None: (
+                        logger.info(
+                            "  [%3d%%] %s [%s]",
+                            int(100 * step / max(total, 1)),
+                            message,
+                            status or "running",
+                        )
                     ),
                 )
                 elapsed = time.perf_counter() - t0

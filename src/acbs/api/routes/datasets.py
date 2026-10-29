@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from acbs.api.deps import get_session
 from acbs.api.schemas import DatasetUploadResponse
-from acbs.data.loader import load_dataset, load_local, load_registry
+from acbs.data.loader import load_local
 from acbs.data.profiler import profile_dataset
 from acbs.data.target_detection import detect_target_in_bytes
 from acbs.exceptions import DatasetError
@@ -20,11 +20,6 @@ router = APIRouter(prefix="/datasets", tags=["datasets"])
 _UPLOAD_LOCK = threading.Lock()
 UPLOAD_DIR = repo_root() / "data" / "raw"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
-
-@router.get("/registry")
-def registry():
-    return load_registry()
 
 
 @router.get("")
@@ -108,7 +103,7 @@ async def upload_dataset(
     profile = profile_dataset(loaded.X, loaded.y)
     profile_json = {
         **profile.model_dump(),
-        # ``meta`` must carry the target column: ``_loaded_from_row`` re-reads the
+        # ``meta`` must carry the target column: ``load_dataset_row`` re-reads the
         # raw file when an experiment runs and cannot recover the target otherwise.
         "meta": {
             "target_column": target,
@@ -143,29 +138,3 @@ async def upload_dataset(
         target=target,
         target_source=target_source,
     )
-
-
-@router.post("/from-registry/{name}")
-def from_registry(name: str, session: Session = Depends(get_session)):
-    try:
-        loaded = load_dataset(name)
-    except DatasetError as exc:
-        raise HTTPException(400, str(exc)) from exc
-    profile = profile_dataset(loaded.X, loaded.y)
-    repo = Repository(session)
-    row = repo.create_dataset(
-        name=name,
-        source=loaded.meta.get("source", "registry"),
-        n_rows=profile.n_rows,
-        n_features=profile.n_features,
-        profile_json={**profile.model_dump(), "meta": loaded.meta},
-        file_hash=None,
-    )
-    return {
-        "id": row.id,
-        "name": name,
-        "profile": profile.model_dump(),
-        "warnings": profile.warnings,
-        "target": loaded.meta.get("target_column"),
-        "target_source": "registry",
-    }

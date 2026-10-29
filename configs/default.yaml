@@ -47,8 +47,6 @@ automl_interpretability:
   mljar: 2
   naiveautoml: 2
   tpot: 2
-  autosklearn: 2
-  autosklearn2: 2
 
 # Optional AI advisor: narrates the stored recommendation through the hosted
 # Respan gateway (needs RESPAN_API_KEY in the server environment).

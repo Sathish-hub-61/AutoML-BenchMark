@@ -110,16 +110,6 @@ code,
   display: inline-block;
 }
 
-.brand .tag {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-faint);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 1px 7px;
-  font-weight: 500;
-}
-
 .site-nav {
   display: flex;
   gap: 2px;
@@ -146,26 +136,6 @@ code,
 
 .site-header .spacer {
   flex: 1;
-}
-
-.api-state {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-faint);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.api-state .dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--neutral);
-}
-
-.api-state.up .dot {
-  background: var(--ok);
 }
 
 main {

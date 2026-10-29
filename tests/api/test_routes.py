@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import time
 import uuid
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import delete
 
 from acbs.api.deps import SessionLocal
 from acbs.api.main import app
+from acbs.storage.models import DatasetRow
 from acbs.storage.repository import Repository
 from acbs.utils.paths import repo_root
 
@@ -36,29 +39,71 @@ def _wait_for(experiment_id: int, timeout_s: int = 60) -> dict:
     raise AssertionError(f"experiment {experiment_id} did not finish: {st}")
 
 
+def _delete_dataset_row(dataset_id: int) -> None:
+    """Drop a test-created dataset row so the store keeps only real uploads.
+
+    A Core-level delete: the ORM would otherwise null out the referencing
+    experiments' NOT NULL ``dataset_id``.
+    """
+    session = SessionLocal()
+    try:
+        session.execute(delete(DatasetRow).where(DatasetRow.id == dataset_id))
+        session.commit()
+    finally:
+        session.close()
+
+
+@pytest.fixture()
+def upload_dataset():
+    """Upload one unique synthetic CSV per test; drop its file and row afterwards."""
+    created: list[tuple[int, Path]] = []
+
+    def _make() -> int:
+        token = uuid.uuid4().hex[:8]
+        name = f"upload_{token}.csv"
+        path = repo_root() / "data" / "raw" / name
+        # Unique offset per call -> unique content hash -> fresh dataset row.
+        jitter = int(token[:4], 16) / 100.0
+        rows = ["a,b,target"]
+        for i in range(60):
+            label = "yes" if i % 2 else "no"
+            rows.append(f"{i % 7},{i * 0.5 + jitter},{label}")
+        content = "\n".join(rows) + "\n"
+        resp = client.post(
+            "/datasets",
+            params={"target": "target"},
+            files={"file": (name, content, "text/csv")},
+        )
+        assert resp.status_code == 200, resp.text
+        ds_id = resp.json()["id"]
+        created.append((ds_id, path))
+        return ds_id
+
+    yield _make
+    session = SessionLocal()
+    try:
+        for ds_id, path in created:
+            session.execute(delete(DatasetRow).where(DatasetRow.id == ds_id))
+            session.commit()
+            path.unlink(missing_ok=True)
+    finally:
+        session.close()
+
+
 def test_health_check():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
-def test_list_registry_datasets():
-    response = client.get("/datasets/registry")
-    assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
-    assert len(data) > 0
+def test_builtin_dataset_endpoints_are_removed():
+    """Built-in datasets are gone from the system: only uploads reach the store."""
+    assert client.get("/datasets/registry").status_code in (404, 422)
+    assert client.post("/datasets/from-registry/breast_cancer").status_code in (404, 405)
 
 
-def test_create_and_run_experiment():
-    # Register dataset first or get registry dataset
-    reg = client.get("/datasets/registry").json()
-    bc_name = next(d["name"] for d in reg if d["name"] == "breast_cancer")
-
-    # Post to /datasets/from-registry/{name}
-    ds_resp = client.post(f"/datasets/from-registry/{bc_name}")
-    assert ds_resp.status_code == 200
-    ds_id = ds_resp.json()["id"]
+def test_create_and_run_experiment(upload_dataset):
+    ds_id = upload_dataset()
 
     # Create experiment with 2 fast models
     exp_payload = {
@@ -122,6 +167,7 @@ def test_upload_dataset_runs_end_to_end():
         label = "yes" if i % 2 else "no"
         rows.append(f"{i % 7},{i * 0.5},{label}")
     content = "\n".join(rows) + "\n"
+    ds_id = None
 
     try:
         up = client.post(
@@ -148,13 +194,13 @@ def test_upload_dataset_runs_end_to_end():
         assert client.get(f"/experiments/{exp_id}/recommendation").status_code == 200
     finally:
         path.unlink(missing_ok=True)
+        if ds_id is not None:
+            _delete_dataset_row(ds_id)
 
 
-def test_recommendation_failure_keeps_results_available():
+def test_recommendation_failure_keeps_results_available(upload_dataset):
     """A constraint that excludes every model must not hide saved results."""
-    reg = client.get("/datasets/registry").json()
-    ds_id = client.post("/datasets/from-registry/breast_cancer").json()["id"]
-    assert reg
+    ds_id = upload_dataset()
 
     exp_id = _create_experiment(ds_id, preferences={"max_training_time_s": 0.0})
     st = _wait_for(exp_id)
@@ -168,11 +214,12 @@ def test_recommendation_failure_keeps_results_available():
 
 def test_advisor_requires_a_key_and_returns_grounded_narrative(
     monkeypatch: pytest.MonkeyPatch,
+    upload_dataset,
 ):
     """The advisor is optional: no key answers 503, a key answers with the model output."""
     from acbs.recommend import advisor
 
-    ds_id = client.post("/datasets/from-registry/breast_cancer").json()["id"]
+    ds_id = upload_dataset()
     exp_id = _create_experiment(ds_id)
     st = _wait_for(exp_id)
     assert st["status"] == "completed", st.get("error")
@@ -203,8 +250,8 @@ def test_advisor_requires_a_key_and_returns_grounded_narrative(
     assert client.post("/experiments/999999/advisor", json={}).status_code == 404
 
 
-def test_delete_cancels_running_experiment():
-    ds_id = client.post("/datasets/from-registry/wine").json()["id"]
+def test_delete_cancels_running_experiment(upload_dataset):
+    ds_id = upload_dataset()
     exp_id = _create_experiment(ds_id)
     _wait_for(exp_id)  # background task has finished; simulate an in-flight run
 
@@ -228,9 +275,9 @@ def test_delete_cancels_running_experiment():
     assert client.delete(f"/experiments/{exp_id}").json()["action"] == "deleted"
 
 
-def test_automl_block_from_ui_is_stored_in_config():
+def test_automl_block_from_ui_is_stored_in_config(upload_dataset):
     """The UI posts frameworks under `automl`; the engine reads config.automl_frameworks."""
-    ds_id = client.post("/datasets/from-registry/breast_cancer").json()["id"]
+    ds_id = upload_dataset()
     resp = client.post(
         "/experiments",
         json={
@@ -279,11 +326,13 @@ def test_upload_without_target_autodetects_and_runs():
     for i in range(60):
         rows.append(f"{i % 7},{i * 0.5},{'yes' if i % 2 else 'no'}")
     content = "\n".join(rows) + "\n"
+    ds_id = None
 
     try:
         up = client.post("/datasets", files={"file": (name, content, "text/csv")})
         assert up.status_code == 200, up.text
         body = up.json()
+        ds_id = body["id"]
         assert body["target"] == "label"
         assert body["target_source"] == "auto"
         assert body["profile"]["meta"]["target_column"] == "label"
@@ -296,9 +345,11 @@ def test_upload_without_target_autodetects_and_runs():
         assert client.get(f"/experiments/{exp_id}/results").status_code == 200
     finally:
         path.unlink(missing_ok=True)
+        if ds_id is not None:
+            _delete_dataset_row(ds_id)
 
 
-def test_auto_framework_selection_stored_in_config():
+def test_auto_framework_selection_stored_in_config(upload_dataset):
     """automl.auto=true: the server picks frameworks — no human choice involved."""
     from unittest.mock import patch
 
@@ -335,7 +386,7 @@ def test_auto_framework_selection_stored_in_config():
         },
     ]
 
-    ds_id = client.post("/datasets/from-registry/breast_cancer").json()["id"]
+    ds_id = upload_dataset()
     with patch("acbs.automl.selection.framework_availability", return_value=fake_avail):
         resp = client.post(
             "/experiments",

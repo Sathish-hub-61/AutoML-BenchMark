@@ -47,9 +47,3 @@ frameworks:
   naiveautoml:
     priority: 8
     max_rows: 20000
-  autosklearn2:
-    priority: 9
-    max_rows: 30000
-  autosklearn:
-    priority: 10
-    max_rows: 30000

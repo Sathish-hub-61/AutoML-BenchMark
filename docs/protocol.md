@@ -66,5 +66,5 @@ To ensure rigorous and unpolluted metric comparisons:
 - `failed`: Framework raised an unrecoverable exception or error during execution.
 - `timeout`: Framework exceeded budget + grace period and was terminated by runner.
 - `unavailable`: Environment not found or prerequisite (e.g., Java for H2O) missing.
-- `unsupported`: Framework cannot run on current operating system (e.g. Auto-sklearn on Windows).
+- `unsupported`: Framework cannot run on current operating system.
 - `skipped`: Intentionally omitted by user configuration.

@@ -1,6 +1,6 @@
 """HTTP client for the Streamlit UI.
 
-Slow-changing endpoints (health, registry, frameworks, cost estimates) are
+Slow-changing endpoints (health, frameworks, cost estimates) are
 cached with ``st.cache_data`` so widget interactions do not re-hit the API on
 every rerun — that was the main source of UI buffering. ``status`` and result
 endpoints are deliberately never cached.
@@ -50,18 +50,6 @@ def health() -> dict[str, Any]:
 
 
 @st.cache_data(ttl=300, show_spinner=False)
-def registry() -> list[dict[str, Any]]:
-    r = requests.get(f"{BASE}/datasets/registry", timeout=15)
-    _raise(r)
-    return r.json()
-
-
-def from_registry(name: str) -> dict[str, Any]:
-    r = requests.post(f"{BASE}/datasets/from-registry/{name}", timeout=120)
-    _raise(r)
-    return r.json()
-
-
 def upload(filename: str, content: bytes, target: str | None = None) -> dict[str, Any]:
     """Upload CSV bytes; omit ``target`` and the API auto-detects it."""
     params = {"target": target} if target else {}

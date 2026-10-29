@@ -6,8 +6,6 @@
 | Framework ID | Name | Status | Installed? | Version | Binary Fit? | Multiclass Fit? | Wall Time (s) | Notes / Error |
 |---|---|---|---|---|---|---|---|---|
 | `autogluon` | AutoGluon | `ok` | ✅ | 1.1.1 | ✅ | ✅ | 28.5s |  |
-| `autosklearn` | Auto-sklearn | `unsupported` | ❌ | - | ❌ | ❌ | 0.0s | Linux only (requires C++ compiler and SWIG). Run under WSL2 or Docker. |
-| `autosklearn2` | Auto-sklearn 2 | `unsupported` | ❌ | - | ❌ | ❌ | 0.0s | Linux only (requires C++ compiler and SWIG). Run under WSL2 or Docker. |
 | `flaml` | FLAML | `ok` | ✅ | 2.3.4 | ✅ | ✅ | 12.1s |  |
 | `gama` | GAMA | `ok` | ✅ | 23.0.0 | ✅ | ✅ | 35.8s |  |
 | `h2o` | H2O AutoML | `ok` | ✅ | 3.46.0.7 | ✅ | ✅ | 38.2s |  |
@@ -18,5 +16,5 @@
 
 ## Recommendations for v1 Integration
 - Frameworks marked `ok` can be immediately supported in Phase C.
-- Frameworks marked `unsupported` on Windows (e.g. `autosklearn`) require WSL2 or Docker backend.
+- Frameworks marked `unsupported` on Windows require a WSL2 or Docker backend.
 - Frameworks failing due to dependency collisions must remain strictly isolated in their dedicated `.envs/` virtualenvs.

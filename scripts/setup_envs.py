@@ -25,16 +25,6 @@ def setup_env(framework_id: str, spec: dict, force: bool = False) -> dict:
     root = repo_root()
     env_dir = root / ".envs" / framework_id
     python_exe = get_python_exe(env_dir)
-
-    is_windows = platform.system() == "Windows"
-    if is_windows and framework_id in {"autosklearn", "autosklearn2"}:
-        print(f"[-] {framework_id}: Auto-sklearn requires Linux/POSIX. Skipping native Windows install (unsupported).")
-        return {
-            "status": "unsupported",
-            "reason": "Auto-sklearn requires Linux/WSL2/Docker. Not supported natively on Windows.",
-            "env_dir": str(env_dir),
-        }
-
     if python_exe.exists() and not force:
         print(f"[+] {framework_id}: Environment already exists at {env_dir}")
         return {"status": "exists", "env_dir": str(env_dir), "python_exe": str(python_exe)}
@@ -51,7 +41,9 @@ def setup_env(framework_id: str, spec: dict, force: bool = False) -> dict:
     )
     if res.returncode != 0:
         # Fall back to default uv python
-        print(f"    Warning: uv venv --python {preferred_python} failed, falling back to current interpreter...")
+        print(
+            f"    Warning: uv venv --python {preferred_python} failed, falling back to current interpreter..."
+        )
         res = subprocess.run(
             ["uv", "venv", str(env_dir)],
             capture_output=True,

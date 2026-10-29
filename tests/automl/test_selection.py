@@ -36,13 +36,13 @@ def test_selects_only_installed_and_supported():
     avail = [
         _fw("flaml"),
         _fw("gama", installed=False),
-        _fw("autosklearn", os_supported=False),
+        _fw("h2o", os_supported=False),
     ]
     res = select_frameworks(PROFILE, availability=avail, policy=BASE_POLICY)
 
     assert res.frameworks == ["flaml"]
     assert "not installed" in res.skipped["gama"]
-    assert "unsupported" in res.skipped["autosklearn"]
+    assert "unsupported" in res.skipped["h2o"]
     # every decision carries a human-readable reason
     assert res.selected["flaml"]
 

@@ -48,23 +48,6 @@ def test_run_result_deserialization():
     assert "JSON decode error" in (res_bad.error or "")
 
 
-def test_unsupported_framework_on_windows():
-    spec = TrainSpec(
-        framework_id="autosklearn",
-        X_train=[[1.0, 2.0]],
-        y_train=[0],
-        X_test=[[3.0, 4.0]],
-        feature_names=["f1", "f2"],
-        task_type="binary",
-        n_classes=2,
-        time_budget_s=10,
-    )
-    if sys.platform == "win32":
-        res = run_framework(spec)
-        assert res.status == "unsupported"
-        assert "Linux" in (res.error or "")
-
-
 def test_missing_venv():
     spec = TrainSpec(
         framework_id="nonexistent_framework_xyz",

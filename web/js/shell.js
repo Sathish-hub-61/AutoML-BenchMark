@@ -18,7 +18,7 @@ function mountShell() {
   header.innerHTML = `
     <div class="inner">
       <a class="brand" href="index.html">
-        <span class="mark"></span>ACBS <span class="tag">v3</span>
+        <span class="mark"></span>ACBS
       </a>
       <nav class="site-nav">
         ${NAV.map(
@@ -27,7 +27,6 @@ function mountShell() {
         ).join("")}
       </nav>
       <span class="spacer"></span>
-      <span class="api-state" id="api-state" title="API health"><span class="dot"></span><span id="api-state-text">…</span></span>
     </div>`;
   document.body.prepend(header);
 
@@ -48,18 +47,13 @@ function mountShell() {
 }
 
 async function checkHealth() {
-  const el = document.getElementById("api-state");
-  const txt = document.getElementById("api-state-text");
   try {
     const h = await ACBS.apiGet("/health");
-    el.classList.add("up");
-    txt.textContent = "API up";
     const v = (h && (h.version || h.lib_version)) || "";
     const foot = document.getElementById("foot-version");
     if (foot && v) foot.textContent = `api ${v}`;
   } catch {
-    el.classList.remove("up");
-    txt.textContent = "API down";
+    // API unreachable: footer version stays blank, nothing else to report.
   }
 }
 

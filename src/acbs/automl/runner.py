@@ -23,9 +23,6 @@ from acbs.automl.contracts import RunResult, TrainSpec
 
 logger = logging.getLogger(__name__)
 
-# Windows-only unsupported frameworks (require C++/SWIG/Linux)
-_LINUX_ONLY = {"autosklearn", "autosklearn2"}
-
 
 def _repo_root() -> Path:
     """Return the repository root (two levels above src/)."""
@@ -169,15 +166,8 @@ def run_framework(
             return RunResult.failed(fid, f"JSON parse error from docker worker: {exc}", elapsed_s)
 
     # ------------------------------------------------------------------
-    # Virtualenv backend platform / availability gates
+    # Virtualenv backend availability gate
     # ------------------------------------------------------------------
-    if platform.system() == "Windows" and fid in _LINUX_ONLY:
-        logger.info("[%s] skipped — Linux only", fid)
-        return RunResult.unsupported(
-            fid,
-            "Requires Linux (C++ compiler + SWIG). Run under WSL2 or Docker.",
-        )
-
     python_exe = _venv_python(fid)
     if python_exe is None:
         return RunResult.failed(

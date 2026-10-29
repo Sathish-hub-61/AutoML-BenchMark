@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
-A reproducible, fair benchmarking and recommendation system that compares **9 AutoML frameworks** (AutoGluon, FLAML, GAMA, H2O, LightAutoML, MLJAR, NaiveAutoML, TPOT, Auto-sklearn) and **8 classic ML classifiers** on tabular datasets under unified protocols, answering:
+A reproducible, fair benchmarking and recommendation system that compares **8 AutoML frameworks** (AutoGluon, FLAML, GAMA, H2O, LightAutoML, MLJAR, NaiveAutoML, TPOT) and **8 classic ML classifiers** on tabular datasets under unified protocols, answering:
 
 > *"Is AutoML actually worth the compute cost on your dataset, or is plain Random Forest good enough?"*
 
@@ -14,7 +14,7 @@ A reproducible, fair benchmarking and recommendation system that compares **9 Au
 
 1. **Two-Tier Fair Protocol**:
    - **Tier 1 (Classic ML)**: 8 classic models (Logistic Regression, SVM, Decision Tree, Random Forest, XGBoost, Gradient Boosting, Naive Bayes, KNN) + `DummyClassifier` baseline evaluated inside strict, leak-free scikit-learn pipelines.
-   - **Tier 2 (AutoML Contenders)**: 9 state-of-the-art AutoML frameworks evaluated on raw, unmodified tabular features.
+   - **Tier 2 (AutoML Contenders)**: 8 state-of-the-art AutoML frameworks evaluated on raw, unmodified tabular features.
 2. **Subprocess & Docker Isolation**:
    - Each AutoML framework executes inside its own dedicated virtualenv (`.envs/<framework>/`) or Docker container. Prevents PyTorch, NumPy, or scikit-learn version conflicts.
 3. **Central Scoring Guarantee**:

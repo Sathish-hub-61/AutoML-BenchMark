@@ -1,4 +1,4 @@
-/* pages/datasets.js — stored datasets, registry import, CSV upload. */
+/* pages/datasets.js — stored datasets and CSV upload. */
 
 const { apiGet, apiPost, apiUpload, qp } = ACBS;
 const { esc, badge, tableHtml, emptyState } = window.ui;
@@ -7,10 +7,7 @@ async function loadDatasets() {
   const rows = await apiGet("/datasets");
   const target = document.getElementById("datasets-table");
   if (!rows.length) {
-    target.innerHTML = emptyState(
-      "No datasets yet",
-      "Upload a CSV or add one from the registry below."
-    );
+    target.innerHTML = emptyState("No datasets yet", "Upload a CSV to get started.");
     return;
   }
   target.innerHTML = tableHtml(
@@ -32,60 +29,6 @@ async function loadDatasets() {
       },
     ],
     rows
-  );
-}
-
-async function loadRegistry() {
-  const reg = await apiGet("/datasets/registry");
-  const items = Array.isArray(reg) ? reg : reg.datasets || [];
-  const target = document.getElementById("registry-table");
-  if (!items.length) {
-    target.innerHTML = emptyState("Registry empty", "No built-in datasets found.");
-    return;
-  }
-  target.innerHTML = tableHtml(
-    [
-      { key: "name", label: "Name", fmt: (r) => `<span class="mono">${esc(r.name)}</span>` },
-      {
-        key: "task",
-        label: "Task",
-        fmt: (r) => esc(r.task || r.problem || "classification"),
-      },
-      {
-        key: "n_rows",
-        label: "Rows",
-        cls: "num",
-        fmt: (r) => esc(r.n_rows ?? r.rows ?? "—"),
-      },
-      {
-        key: "description",
-        label: "Description",
-        fmt: (r) => `<span class="faint">${esc((r.description || "").slice(0, 80))}</span>`,
-      },
-      {
-        key: "name",
-        label: "",
-        cls: "num",
-        fmt: (r) =>
-          `<button class="btn sm" data-add="${esc(r.name)}">Add &amp; benchmark</button>`,
-      },
-    ],
-    items
-  );
-  target.querySelectorAll("[data-add]").forEach((b) =>
-    b.addEventListener("click", async () => {
-      b.disabled = true;
-      b.textContent = "Fetching…";
-      try {
-        const res = await apiPost(`/datasets/from-registry/${encodeURIComponent(b.dataset.add)}`);
-        toast(`Added ${res.name} (target: ${res.target || "auto-detected"})`, "ok");
-        window.location.href = `new-benchmark.html?dataset_id=${res.id}`;
-      } catch (e) {
-        toast(e.message, "error");
-        b.disabled = false;
-        b.textContent = "Add & benchmark";
-      }
-    })
   );
 }
 
@@ -118,5 +61,5 @@ function wireUpload() {
 
 document.addEventListener("DOMContentLoaded", () => {
   wireUpload();
-  Promise.all([loadDatasets(), loadRegistry()]).catch((e) => toast(e.message, "error"));
+  loadDatasets().catch((e) => toast(e.message, "error"));
 });

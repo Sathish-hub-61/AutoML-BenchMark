@@ -12,16 +12,14 @@ from acbs.api.schemas import AdvisorQuestion, ExperimentCreate, ExperimentStatus
 from acbs.automl.selection import select_frameworks
 from acbs.benchmark.aggregate import results_to_dataframe
 from acbs.benchmark.engine import BenchmarkResult, run_benchmark
-from acbs.data.loader import LoadedDataset, load_dataset, load_local
+from acbs.data.loader import load_dataset_row
 from acbs.recommend import advisor
 from acbs.recommend.explain import generate_explanation
 from acbs.recommend.scoring import UserPreferences, score_models, sensitivity_analysis
 from acbs.reporting.report import build_html_report, export_csv, export_pdf
-from acbs.storage.models import DatasetRow
 from acbs.storage.repository import Repository
 from acbs.utils.jsonsafe import json_safe
 from acbs.utils.logging import get_logger
-from acbs.utils.paths import repo_root
 from acbs.utils.time import utc_now
 
 logger = get_logger(__name__)
@@ -60,17 +58,6 @@ def _elapsed_seconds(started_at, finished_at) -> float | None:
         return (end.replace(tzinfo=None) - started_at.replace(tzinfo=None)).total_seconds()
 
 
-def _loaded_from_row(row: DatasetRow) -> LoadedDataset:
-    meta = (row.profile_json or {}).get("meta") or {}
-    target = meta.get("target_column")
-    if row.source == "upload":
-        path = repo_root() / "data" / "raw" / row.name
-        if not target:
-            raise ValueError("uploaded dataset missing target")
-        return load_local(path, target)
-    return load_dataset(row.name, target)
-
-
 def _recommend(result: BenchmarkResult, prefs: UserPreferences):
     df = results_to_dataframe(result)
     scored = score_models(df, prefs)
@@ -103,7 +90,7 @@ def _execute(experiment_id: int) -> None:
             )
             return
         repo.update_status(experiment_id, "running", started_at=utc_now(), error=None)
-        dataset = _loaded_from_row(exp.dataset)
+        dataset = load_dataset_row(exp.dataset)
         cfg = dict(exp.config_json or {})
         automl_ids = set(cfg.get("automl_frameworks") or [])
         automl_budget = cfg.get("automl_budget_s")

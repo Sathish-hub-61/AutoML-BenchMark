@@ -10,8 +10,6 @@ from acbs.recommend.scoring import UserPreferences, automl_value_analysis, score
 
 _FRAMEWORK_STRATEGIES = {
     "autogluon": "stacked ensembles of preset pipelines",
-    "autosklearn": "Bayesian optimisation of scikit-learn pipelines",
-    "autosklearn2": "Bayesian optimisation of iterative algorithms",
     "flaml": "cost-frugal optimisation",
     "gama": "evolutionary optimisation of scikit-learn pipelines",
     "h2o": "random search and ensembling",

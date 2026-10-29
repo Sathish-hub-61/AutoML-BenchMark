@@ -4,25 +4,67 @@ import zipfile
 from pathlib import Path
 
 import joblib
+import pytest
+from sqlalchemy import delete
 
 from acbs.benchmark.engine import BenchmarkConfig, run_benchmark
-from acbs.data.loader import load_dataset
+from acbs.data.loader import LoadedDataset, load_dataset
 from acbs.models.export import export_experiment_model
 from acbs.storage import Repository, make_session_factory
-from acbs.storage.models import ExperimentRow
+from acbs.storage.models import DatasetRow, ExperimentRow
+from acbs.utils.paths import repo_root
 
 
-def test_export_classic_model(tmp_path: Path):
+@pytest.fixture()
+def uploaded_csv():
+    """Remove the CSVs and dataset rows tests store under data/raw, even on failure."""
+    created: list[tuple[int, Path]] = []
+    yield created
+    factory = make_session_factory()
+    session = factory()
+    try:
+        for ds_id, path in created:
+            # Core delete: the ORM would null out experiments' NOT NULL FK.
+            session.execute(delete(DatasetRow).where(DatasetRow.id == ds_id))
+            session.commit()
+            path.unlink(missing_ok=True)
+    finally:
+        session.close()
+
+
+def _store_as_upload(repo: Repository, ds: LoadedDataset) -> tuple[DatasetRow, Path]:
+    """Persist a dataset exactly like the upload route: a raw CSV + an upload row."""
+    import uuid
+
+    name = f"export_{uuid.uuid4().hex[:10]}.csv"
+    path = repo_root() / "data" / "raw" / name
+    frame = ds.X.copy()
+    frame["target"] = ds.y.to_numpy()
+    frame.to_csv(path, index=False)
+    row = repo.create_dataset(
+        name=name,
+        source="upload",
+        n_rows=len(ds.X),
+        n_features=len(ds.X.columns),
+        profile_json={
+            "meta": {
+                "target_column": "target",
+                "target_source": "explicit",
+                "source": "upload",
+                "name": name,
+            }
+        },
+    )
+    return row, path
+
+
+def test_export_classic_model(tmp_path: Path, uploaded_csv):
     SessionLocal = make_session_factory()
     with SessionLocal() as session:
         repo = Repository(session)
         ds = load_dataset("breast_cancer")
-        ds_row = repo.create_dataset(
-            name="breast_cancer",
-            source="sklearn",
-            n_rows=len(ds.X),
-            n_features=len(ds.X.columns),
-        )
+        ds_row, csv_path = _store_as_upload(repo, ds)
+        uploaded_csv.append((ds_row.id, csv_path))
 
         cfg = BenchmarkConfig(models=["logistic_regression"], tuning="none", cv_folds=2)
         exp = repo.create_experiment(
@@ -68,17 +110,13 @@ def test_export_classic_model(tmp_path: Path):
             assert len(preds) == 5
 
 
-def test_export_automl_model(tmp_path: Path):
+def test_export_automl_model(tmp_path: Path, uploaded_csv):
     SessionLocal = make_session_factory()
     with SessionLocal() as session:
         repo = Repository(session)
         ds = load_dataset("breast_cancer")
-        ds_row = repo.create_dataset(
-            name="breast_cancer",
-            source="sklearn",
-            n_rows=len(ds.X),
-            n_features=len(ds.X.columns),
-        )
+        ds_row, csv_path = _store_as_upload(repo, ds)
+        uploaded_csv.append((ds_row.id, csv_path))
 
         cfg = BenchmarkConfig(models=["logistic_regression"], tuning="none", cv_folds=2)
         exp = repo.create_experiment(

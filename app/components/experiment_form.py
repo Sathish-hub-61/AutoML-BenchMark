@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from api_client import ApiError, estimate_cost, frameworks, from_registry, registry, upload
+from api_client import ApiError, estimate_cost, frameworks, upload
 from components.framework_picker import framework_picker
 
 ALL_MODELS = [
@@ -60,20 +60,6 @@ def experiment_form() -> dict | None:
     """Render the new-benchmark page. Returns the request body on submit."""
 
     st.subheader("📂 Dataset")
-
-    # Built-in datasets are a fallback; the primary path is uploading a CSV.
-    with st.expander("…or use a built-in registry dataset"):
-        try:
-            names = [d["name"] for d in registry() if d.get("source") != "kaggle"]
-        except Exception:
-            names = ["breast_cancer", "wine"]
-        choice = st.selectbox("Dataset", names, key="exp_reg_choice")
-        if st.button("Load dataset", key="exp_load_btn"):
-            try:
-                st.session_state.dataset_payload = from_registry(choice)
-                st.session_state.exp_uploaded_key = None
-            except ApiError as exc:
-                st.error(str(exc))
 
     file = st.file_uploader("CSV file", type=["csv"], key="exp_upload_file")
 
@@ -204,7 +190,7 @@ def experiment_form() -> dict | None:
         else:
             payload = st.session_state.get("dataset_payload")
     if not payload:
-        st.info("Upload a CSV or load a built-in dataset first.")
+        st.info("Upload a CSV first.")
         return None
 
     prefs: dict = {"preset": None if use_custom else preset}
