@@ -28,3 +28,10 @@ build/
 AutogluonModels/
 AutoML_*/
 gama_*/
+
+# Frozen local deployment snapshots (deploy/v3 and future deploy targets)
+/deploy/
+
+# Local runtime output
+logs/
+.freebuff/
